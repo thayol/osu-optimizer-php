@@ -1,7 +1,8 @@
 <?php
 // todo: whitelist / blacklist
 // todo: repack osz file
-
+// todo: dupe checker
+// todo: stardiff deleter
 
 
 // imports
