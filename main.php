@@ -53,7 +53,7 @@ if (isset($_GET["purify"]))
 $start = file_get_contents("resources/start.html");
 $start = str_replace("{{ STYLE }}", file_get_contents("resources/style.css"), $start);
 echo $start;
-// dump($lib, "lib");
+dump($lib, "lib");
 echo '<a href="./?rescan">[Rescan]</a> ';
 echo '<a href="./?blacken">[Blacken]</a> ';
 echo '<a href="./?nosb">[NoSB]</a> ';

@@ -63,7 +63,8 @@ class osu_parser
 		$current_section = false;
 		$section_type = false;
 		$delimiter = false;
-		$needed_sections = [ "General", "Metadata", "Difficulty", "Events" ];
+		$variables = [ "keys" => array(), "values" => array()]; // variables for osb files $key=value pairs
+		$needed_sections = [ "General", "Metadata", "Difficulty", "Variables", "Events" ];
 		foreach ($file as $key => $line)
 		{
 			if (mb_strpos($line, "[") === 0 && mb_strpos($line, "]") === (strlen($line)-1))
@@ -90,8 +91,16 @@ class osu_parser
 					$kv_key = mb_substr($line, 0, $delimiter_position);
 					$kv_value = mb_substr($line, $delimiter_position + strlen($delimiter));
 					
-					// after some thinking, keeping the original names was a good idea
-					$parsed[$current_section][$kv_key] = $kv_value;
+					if ($current_section == "Variables")
+					{
+						$variables["keys"][$kv_key] = $kv_key;
+						$variables["values"][$kv_key] = $kv_value;
+					}
+					else
+					{
+						// after some thinking, keeping the original names was a good idea
+						$parsed[$current_section][$kv_key] = $kv_value;	
+					}
 				}
 			}
 			else if ($section_type == "lists")
@@ -101,7 +110,7 @@ class osu_parser
 				{
 					if (mb_strpos($line, " ") === 0 || mb_strpos($line, "_") === 0) continue; // skip storyboard details lines
 					
-					list($event_type, $source_files) = self::gather_source_files($list);
+					list($event_type, $source_files) = self::gather_source_files($list, $variables);
 					
 					if ($event_type === false)
 					{
@@ -142,6 +151,9 @@ class osu_parser
 		}
 		unset($file); // remove the memory leak
 		
+		// storyboards are overloaded with dupes (renumber to make json export to arrays)
+		$parsed["storyboard"] = array_values(array_unique($parsed["storyboard"]));
+		
 		$time_end = microtime(true);
 		$parsing_time = $time_end - $time_start;
 		$parsed["parsing_time"] = $parsing_time;
@@ -154,7 +166,7 @@ class osu_parser
 		return $parsed;
 	}
 	
-	public static function gather_source_files(array $list) : array
+	public static function gather_source_files(array $list, array $variables) : array
 	{
 		$list[0] = self::convert_event_type($list[0]);
 		$event_type = $list[0];
@@ -174,8 +186,18 @@ class osu_parser
 			$source_file = $list[3];
 		}
 		
+		
+		// use osb variables
+		if (mb_strpos($source_file, "$") !== false)
+		{
+			$source_file = str_replace($variables["keys"], $variables["values"], $source_file);
+		}
+		
 		// fix backslash and double quotes
 		if ($source_file !== false) $source_file = trim(str_replace("\\", "/", $source_file), "\"");
+		
+		// fix leading dot slash
+		if (mb_strpos($source_file, "./") === 0) $source_file = mb_substr($source_file, 2);
 		
 		if ($event_type == "6")
 		{
@@ -191,7 +213,8 @@ class osu_parser
 			$source_files = array();
 			for ($i = 0; $i < $frames; $i++) // fill the array
 			{
-				$source_files[] = $directory . $filename . $i . $extension;
+				$resource_file = $directory . $filename . $i . $extension;
+				$source_files[] = $resource_file;
 			}
 		}
 		else
@@ -231,6 +254,10 @@ class osu_parser
 			case "Colours":
 				$section_type = "key-value pairs";
 				$delimiter = " : "; // WHY WOULD YOU DO THIS IF YOU ALREADY HAVE TWO TYPES OF KEY-VALUE PAIRS???????????????????
+				break;
+			case "Variables":
+				$section_type = "key-value pairs";
+				$delimiter = "=";
 				break;
 			case "Events":
 			case "TimingPoints":
