@@ -2,6 +2,7 @@
 // todo: whitelist / blacklist
 // todo: repack osz file
 set_time_limit(300000);
+ini_set('memory_limit', '1024M');
 
 require_once "libraries/osu_library.php";
 require_once "libraries/optimizer.php";
@@ -67,10 +68,10 @@ foreach ($lib->get_library() as $set)
 {
 	foreach ($set["difficulties"] as $map)
 	{
-		$proc_time += $map["process_time"];
+		$proc_time += $map["parsing_time"] ?? 0;
 	}
 }
-echo "<h3>Process time: " . $proc_time . " seconds</h3>";
+echo "<h3>Parse time: " . $proc_time . " seconds</h3>";
 // foreach ($lib->get_library() as $mapset)
 // {
 	// echo '<div class="beatmapset">';
@@ -80,8 +81,8 @@ echo "<h3>Process time: " . $proc_time . " seconds</h3>";
 	// echo '</h2>';
 	// foreach ($mapset["difficulties"] as $beatmap)
 	// {
-		// $beatmap["format-2"] = substr($beatmap["format"] ?? "v1", 1);
-		// if (is_numeric(substr($beatmap["format"] ?? "v1", 1)))
+		// $beatmap["format-2"] = mb_substr($beatmap["format"] ?? "v1", 1);
+		// if (is_numeric(mb_substr($beatmap["format"] ?? "v1", 1)))
 		// {
 			// echo '<div class="beatmap">';
 			// echo '<h3>Title: ' . $beatmap["title"];

@@ -6,6 +6,7 @@ class osu_library
 {
 	private static $song_library_folder = "Songs";
 	private static $db_file_location = "session/optimizer_data.json";
+	private static $cache_root = "session/cache";
 	
 	private $db;
 	
@@ -22,7 +23,11 @@ class osu_library
 		
 		$this->set_root($root); // update db entry
 		
-		foreach(glob($this->get_library_folder() . "/*", GLOB_ONLYDIR) as $folder)
+		$this->clear_library();
+		$glob = glob($this->get_library_folder() . "/*", GLOB_ONLYDIR);
+		
+		natsort($glob); // i like wasting your processing power
+		foreach($glob as $folder)
 		{
 			$this->scan_add_folder($folder);
 		}
@@ -30,11 +35,11 @@ class osu_library
 	
 	public function rescan_library(string $root) : void
 	{
-		$this->clear_library_cache();
+		$this->clear_library();
 		$this->scan_library($root);
 	}
 	
-	private function clear_library_cache() : void
+	private function clear_library() : void
 	{
 		unset($this->db["library"]);
 	}
@@ -50,9 +55,12 @@ class osu_library
 		$osb_glob = glob(utils::globsafe($folder) . "/*.osb");
 		$glob = array_merge($osu_glob, $osb_glob);
 		
+		$cacher = new osu_cacher($this->get_library_folder(), self::$cache_root);
+		$parser = new osu_parser($cacher);
+		
 		foreach ($glob as $file)
 		{
-			$difficulty = osu_parser::parse_osu_file_format($file);
+			$difficulty = $parser->parse_osu_file_format($file);
 			$difficulty["key"] = basename($file);
 			$difficulty["path"] = $file;
 			
@@ -71,7 +79,9 @@ class osu_library
 		
 		// if (!isset($this->db["library"])) $this->db["library"] = array();
 		
-		$this->db["library"] = array(); // init or reset
+		// init empty
+		if (!isset($this->db["library"])) $this->db["library"] = array();
+		
 		$this->db["library"][$key] = $entry;
 	}
 	

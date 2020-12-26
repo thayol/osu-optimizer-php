@@ -8,6 +8,7 @@ class osu_cacher
 	{
 		$this->root = $root;
 		$this->cache_root = $cache_root;
+		if (!file_exists($cache_root)) mkdir($cache_root, 0777, true);
 	}
 	
 	public function get_root() : string
@@ -30,21 +31,29 @@ class osu_cacher
 		return file_exists($this->get_cached_path($path));
 	}
 	
-	public function get_cached(string $path, $hash=false)// : array|bool // see you again in php8
+	public function get_cache(string $path, $hash=false)// : array|bool // see you again in php8
 	{
-		if (!is_cached($path)) return false;
+		if (!$this->is_cached($path)) return false;
 		
 		$raw = file_get_contents($this->get_cached_path($path));
 		$json = json_decode($raw, true);
 		
-		if ($hash !== false && $hash != $json["hash"]) return false; // hash check failed
+		if (empty($json)) return false; // cache had empty save
+		
+		if ($hash !== false && $hash != ($json["hash"] ?? false)) return false; // hash check failed
 		
 		return $json;
 	}
 	
 	public function set_cache(string $path, array $content) : void
 	{
+		$cache_path = $this->get_cached_path($path);
+		$cache_dir = dirname($cache_path);
+		if (!file_exists($cache_dir)) mkdir($cache_dir, 0777, true);
+		
+		if (!isset($content["hash"])) $content["hash"] = hash_file("md5", $path);
+		
 		$encoded = json_encode($content);
-		file_put_contents($this->get_cached_path($path), $encoded);
+		file_put_contents($cache_path, $encoded);
 	}
 }

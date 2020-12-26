@@ -20,7 +20,7 @@ class osu_old_parser
 		foreach ($file as $key => $line)
 		{
 			
-			if (strpos($line, "[") === 0 && strpos($line, "]") === (strlen($line)-1))
+			if (mb_strpos($line, "[") === 0 && mb_strpos($line, "]") === (strlen($line)-1))
 			{
 				$current_section = str_replace([ "[", "]" ], "", $line);
 				if (!isset($osu[$current_section]))
@@ -73,15 +73,15 @@ class osu_old_parser
 			if ($skip) continue;
 			
 			
-			if (strpos($line, "//") === 0) // there were commented files that broke my script
+			if (mb_strpos($line, "//") === 0) // there were commented files that broke my script
 			{
 			}
 			else if ($section_type == "key-value pairs")
 			{
-				$delimiter_position = strpos($line, $delimiter);
+				$delimiter_position = mb_strpos($line, $delimiter);
 				
-				$value = substr($line, $delimiter_position + strlen($delimiter_position));
-				$osu[$current_section][substr($line, 0, $delimiter_position)] = $value;
+				$value = mb_substr($line, $delimiter_position + strlen($delimiter_position));
+				$osu[$current_section][mb_substr($line, 0, $delimiter_position)] = $value;
 			}
 			else if ($section_type == "lists")
 			{
@@ -90,7 +90,7 @@ class osu_old_parser
 				// group events by type and start time
 				if ($current_section == "Events")
 				{
-					if (strpos($line, " ") === 0) continue; // skip storyboard details lines
+					if (mb_strpos($line, " ") === 0) continue; // skip storyboard details lines
 					
 					// event types: https://github.com/ppy/osu/blob/master/osu.Game/Beatmaps/Legacy/LegacyEventType.cs
 					$list[0] = str_replace(
@@ -199,7 +199,7 @@ class osu_old_parser
 		$current_section = "UnofficialComments";
 		foreach ($file as $key => $line)
 		{
-			if (strpos($line, "[") === 0 && strpos($line, "]") === (strlen($line)-1))
+			if (mb_strpos($line, "[") === 0 && mb_strpos($line, "]") === (strlen($line)-1))
 			{
 				$current_section = str_replace([ "[", "]" ], "", $line);
 				continue;

@@ -48,7 +48,7 @@ class osu_parser
 		$parsed = array();
 		
 		// file format declaration
-		if (stripos($file[0], "osu file format ") === false)
+		if (stripos($file[0], "osu file format ") !== false)
 		{
 			// the ranker script had a bug where random "ZERO WIDTH NO-BREAK SPACE"
 			// characters were at beginning of the .osu files
@@ -61,17 +61,19 @@ class osu_parser
 		}
 		
 		$current_section = false;
+		$section_type = false;
+		$delimiter = false;
 		$needed_sections = [ "General", "Metadata", "Difficulty", "Events" ];
 		foreach ($file as $key => $line)
 		{
-			if (strpos($line, "[") === 0 && strpos($line, "]") === (strlen($line)-1))
+			if (mb_strpos($line, "[") === 0 && mb_strpos($line, "]") === (strlen($line)-1))
 			{
 				list($current_section, $section_type, $delimiter) = self::parse_osu_file_section_header($line, $needed_sections);
 				
 				continue; // this line has been analyzed
 			}
 			
-			if (strpos($line, "//") === 0 || // the editor puts hella lot of comments in the files
+			if (mb_strpos($line, "//") === 0 || // the editor puts hella lot of comments in the files
 				$section_type === false)
 			{
 			}
@@ -80,20 +82,24 @@ class osu_parser
 				// init empty array
 				if (!isset($parsed[$current_section])) $parsed[$current_section] = array();
 				
-				$delimiter_position = strpos($line, $delimiter);
+				$delimiter_position = mb_strpos($line, $delimiter);
 				
-				$kv_key = substr($line, 0, $delimiter_position);
-				$kv_value = substr($line, $delimiter_position + strlen($delimiter_position));
-				
-				// after some thinking, keeping the original names was a good idea
-				$parsed[$current_section][$kv_key] = $kv_value;
+				// old maps had random lines and lines with different delimiters (why?)
+				if ($delimiter_position !== false)
+				{
+					$kv_key = mb_substr($line, 0, $delimiter_position);
+					$kv_value = mb_substr($line, $delimiter_position + strlen($delimiter));
+					
+					// after some thinking, keeping the original names was a good idea
+					$parsed[$current_section][$kv_key] = $kv_value;
+				}
 			}
 			else if ($section_type == "lists")
 			{
 				$list = explode($delimiter, $line);
 				if ($current_section == "Events") // saving the whole thing would take up too much space
 				{
-					if (strpos($line, " ") === 0 || strpos($line, "_") === 0) continue; // skip storyboard details lines
+					if (mb_strpos($line, " ") === 0 || mb_strpos($line, "_") === 0) continue; // skip storyboard details lines
 					
 					list($event_type, $source_files) = self::gather_source_files($list);
 					
@@ -136,6 +142,10 @@ class osu_parser
 		}
 		unset($file); // remove the memory leak
 		
+		$time_end = microtime(true);
+		$parsing_time = $time_end - $time_start;
+		$parsed["parsing_time"] = $parsing_time;
+		
 		if (!$skip_cache)
 		{
 			$this->cacher->set_cache($path, $parsed);
@@ -146,7 +156,7 @@ class osu_parser
 	
 	public static function gather_source_files(array $list) : array
 	{
-		$list[0] = convert_event_type($list[0]);
+		$list[0] = self::convert_event_type($list[0]);
 		$event_type = $list[0];
 		
 		if (!in_array($event_type, [ "0", "1", "4", "5", "6" ]))
