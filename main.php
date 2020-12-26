@@ -3,10 +3,10 @@
 // todo: repack osz file
 set_time_limit(300000);
 
-require "libraries/osu_library.php";
-require "libraries/optimizer.php";
-require "libraries/utils.php";
-require "temp/dump.php";
+require_once "libraries/osu_library.php";
+require_once "libraries/optimizer.php";
+require_once "libraries/utils.php";
+require_once "temp/dump.php";
 
 $lib = new osu_library();
 
