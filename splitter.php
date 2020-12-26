@@ -42,7 +42,7 @@ foreach ($library as $key => $set)
 	$tiempo = 0;
 	foreach ($set["difficulties"] as $map)
 	{
-		$tiempo += $map["parse_time"];
+		$tiempo += $map["parsing_time"];
 	}
 	$proc_times[$key] = $tiempo;
 }
@@ -53,6 +53,14 @@ foreach ($proc_times as $key => $tiempo)
 {
 	$value = $library[$key];
 	$firstdiff = $value["difficulties"][array_key_first($value["difficulties"])];
-	echo str_pad(round($tiempo, 5), 7, "0") . "s " . $value["id"] . ": " . $firstdiff["Metadata"]["Artist"] . " - " . $firstdiff["Metadata"]["Title"] . " (" . count($value["difficulties"]) . " difficulties)\n";
+	$diffcount = 0;
+	foreach ($value["difficulties"] as $diff)
+	{
+		if ($diff["format"] != "storyboard")
+		{
+			$diffcount++;
+		}
+	}
+	echo str_pad(round($tiempo, 5), 7, "0") . "s " . $value["id"] . ": " . $firstdiff["Metadata"]["Artist"] . " - " . $firstdiff["Metadata"]["Title"] . " (" . $diffcount . " difficulties)\n";
 }
 echo "</pre>";
