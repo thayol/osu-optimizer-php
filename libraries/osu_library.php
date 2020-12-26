@@ -16,8 +16,14 @@ class osu_library
 		$this->load_db($db_file);
 	}
 	
+	public function get_scan_time() : float
+	{
+		return floatval($this->db["scanning_time"] ?? 0);
+	}
+	
 	public function scan_library(string $root) : void
 	{
+		$time_start = microtime(true); // measure scanning time
 		$root = str_ireplace("\\", "/", $root); // fuck windows backslash
 		$root = rtrim($root, "/"); // remove trailing slash(es)
 		
@@ -31,6 +37,10 @@ class osu_library
 		{
 			$this->scan_add_folder($folder);
 		}
+		
+		$time_end = microtime(true);
+		$scanning_time = $time_end - $time_start;
+		$this->db["scanning_time"] = $scanning_time;
 	}
 	
 	public function rescan_library(string $root) : void
@@ -60,15 +70,31 @@ class osu_library
 		
 		foreach ($glob as $file)
 		{
+			$difficulty_key = basename($file);
 			$difficulty = $parser->parse_osu_file_format($file);
-			$difficulty["key"] = basename($file);
+			$difficulty["key"] = $difficulty_key;
 			$difficulty["path"] = $file;
 			
-			$difficulties[basename($file)] = $difficulty;
+			$difficulties[$difficulty_key] = $difficulty;
 		}
 		
-		$temp = explode(" ", basename($folder))[0];
-		$set_id = is_numeric($temp) ? $temp : "";
+		// look for a beatmapset id
+		$set_id = false;
+		foreach ($difficulties as $difficulty)
+		{
+			if (!empty($difficulty[0]["Metadata"]["BeatmapSetID"]))
+			{
+				$id = intval($difficulty[0]["Metadata"]["BeatmapSetID"]);
+			}
+		}
+		
+		if ($set_id === false)
+		{
+			$temp = explode(" ", basename($folder))[0];
+			$set_id = is_numeric($temp) ? $temp : "";
+		}
+		
+		if ($set_id < 1) $set_id = false; // some are 0, some are -1, allowing positive only
 		
 		$entry = array(
 			"key" => $key,
@@ -148,7 +174,12 @@ class osu_library
 	
 	public function get_full_library() : array
 	{
-		return $this->db["library"];
+		return $this->db["library"] ?? array();
+	}
+	
+	public function is_loaded() : bool
+	{
+		return !empty($this->get_full_library()); // not empty == loaded
 	}
 	
 	public function get_folders() : array

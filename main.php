@@ -1,9 +1,9 @@
 <?php
 // todo: whitelist / blacklist
 // todo: repack osz file
-set_time_limit(300000);
-ini_set('memory_limit', '1024M');
 
+
+// imports
 require_once "libraries/osu_library.php";
 require_once "libraries/optimizer.php";
 require_once "libraries/utils.php";
@@ -11,7 +11,12 @@ require_once "temp/dump.php";
 
 $lib = new osu_library();
 
-$root = "S:/test";
+$display = "start";
+
+if ($lib->is_loaded())
+{
+	$display = "main";
+}
 
 function redirect($path)
 {
@@ -21,7 +26,7 @@ function redirect($path)
 
 if (isset($_GET["rescan"]))
 {
-	$lib->scan_library($root);
+	$lib->scan_library(json_decode(file_get_contents("session/settings.json"), true)["osu_folder"]);
 	$lib->save_db();
 	redirect("./");
 }
@@ -72,6 +77,7 @@ foreach ($lib->get_library() as $set)
 	}
 }
 echo "<h3>Parse time: " . $proc_time . " seconds</h3>";
+echo "<h3>Scan time: " . $lib->get_scan_time() . " seconds</h3>";
 // foreach ($lib->get_library() as $mapset)
 // {
 	// echo '<div class="beatmapset">';
