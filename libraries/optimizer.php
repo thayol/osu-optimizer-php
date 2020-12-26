@@ -38,7 +38,7 @@ class optimizer
 			unlink($file);
 		}
 		
-		foreach ($library->get_storyboard_files() as $file)
+		foreach ($library->get_osb_files() as $file)
 		{
 			unlink($file);
 		}
@@ -118,7 +118,7 @@ class optimizer
 		$vid = $library->get_videos();
 		$sb = $library->get_storyboards();
 		$a = $library->get_audiofiles();
-		$sbf = $library->get_storyboard_files();
+		$sbf = $library->get_osb_files();
 		$osf = $library->get_osu_files();
 		$excluded = array_merge($bg, $vid, $sb, $a, $sbf, $osf);
 		

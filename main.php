@@ -9,6 +9,7 @@
 require_once "libraries/osu_library.php";
 require_once "libraries/optimizer.php";
 require_once "libraries/utils.php";
+require_once "libraries/template_engine.php";
 require_once "temp/dump.php";
 
 $lib = new osu_library();
