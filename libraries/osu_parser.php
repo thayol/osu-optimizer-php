@@ -152,7 +152,7 @@ class osu_parser
 		unset($file); // remove the memory leak
 		
 		// storyboards are overloaded with dupes (renumber to make json export to arrays)
-		$parsed["storyboard"] = array_values(array_unique($parsed["storyboard"]));
+		if (!empty($parsed["storyboard"])) $parsed["storyboard"] = array_values(array_unique($parsed["storyboard"]));
 		
 		$time_end = microtime(true);
 		$parsing_time = $time_end - $time_start;

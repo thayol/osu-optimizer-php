@@ -29,13 +29,21 @@ class osu_library
 		
 		$this->set_root($root); // update db entry
 		
-		$this->clear_library();
 		$glob = glob($this->get_library_folder() . "/*", GLOB_ONLYDIR);
 		
+		$library = $this->get_library();
 		natsort($glob); // i like wasting your processing power
 		foreach($glob as $folder)
 		{
-			$this->scan_add_folder($folder);
+			$key = basename($folder);
+			if (isset($library[$key]))
+			{
+				$this->scan_check_folder($folder);
+			}
+			else
+			{
+				$this->scan_add_folder($folder);
+			}
 		}
 		
 		$time_end = microtime(true);
@@ -52,6 +60,37 @@ class osu_library
 	private function clear_library() : void
 	{
 		unset($this->db["library"]);
+	}
+	
+	private function scan_check_folder(string $folder) : void
+	{
+		$key = basename($folder);
+		
+		$osu_glob = glob(utils::globsafe($folder) . "/*.osu");
+		$osb_glob = glob(utils::globsafe($folder) . "/*.osb");
+		$glob = array_merge($osu_glob, $osb_glob);
+		
+		$cacher = new osu_cacher($this->get_library_folder(), self::$cache_root);
+		
+		$changed = false;
+		if (count($osu_glob) < 1) 
+		{
+			$changed = true;
+		}
+		
+		foreach ($glob as $file)
+		{
+			if ($cacher->get_cache($file) === false)
+			{
+				$changed = true;
+			}
+		}
+		
+		if ($changed)
+		{
+			unset($this->db["library"][$key]);
+			$this->scan_add_folder($folder);
+		}
 	}
 	
 	private function scan_add_folder(string $folder) : void

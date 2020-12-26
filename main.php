@@ -28,6 +28,13 @@ function redirect($path)
 
 if (isset($_GET["rescan"]))
 {
+	$lib->rescan_library(json_decode(file_get_contents("session/settings.json"), true)["osu_folder"]);
+	$lib->save_db();
+	redirect("./");
+}
+
+if (isset($_GET["scan"]))
+{
 	$lib->scan_library(json_decode(file_get_contents("session/settings.json"), true)["osu_folder"]);
 	$lib->save_db();
 	redirect("./");
@@ -61,7 +68,8 @@ $start = file_get_contents("resources/start.html");
 $start = str_replace("{{ STYLE }}", file_get_contents("resources/style.css"), $start);
 echo $start;
 dump($lib, "lib");
-echo '<a href="./?rescan">[Rescan]</a> ';
+echo '<a href="./?scan">[Scan]</a> ';
+echo '<a href="./?rescan">[Force rescan]</a> ';
 echo '<a href="./?blacken">[Blacken]</a> ';
 echo '<a href="./?nosb">[NoSB]</a> ';
 echo '<a href="./?novid">[Novid]</a> ';
