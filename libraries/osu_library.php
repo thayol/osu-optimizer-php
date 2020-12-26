@@ -1,5 +1,6 @@
 <?php
-require "libraries/osu_parser.php";
+require_once "libraries/osu_parser.php";
+require_once "libraries/osu_cacher.php";
 
 class osu_library
 {
@@ -45,35 +46,21 @@ class osu_library
 		$difficulties = array();
 		
 		$osu_glob = glob(utils::globsafe($folder) . "/*.osu");
-		// if (count($osu_glob) < 1) return; // nothing to do here...
+		if (count($osu_glob) < 1) return; // nothing to do here...
+		$osb_glob = glob(utils::globsafe($folder) . "/*.osb");
+		$glob = array_merge($osu_glob, $osb_glob);
 		
-		foreach ($osu_glob as $osu_file)
+		foreach ($glob as $file)
 		{
-			$diff = osu_parser::scan_parse_osu_file($osu_file);
-			$diff["key"] = basename($osu_file);
-			$diff["path"] = $osu_file;
+			$difficulty = osu_parser::parse_osu_file_format($file);
+			$difficulty["key"] = basename($file);
+			$difficulty["path"] = $file;
 			
-			$difficulties[basename($osu_file)] = $diff;
-		}
-		
-		foreach (glob(utils::globsafe($folder) . "/*.osb") as $osb_file)
-		{
-			$diff = osu_parser::scan_parse_osb_file($osb_file);
-			$diff["key"] = basename($osb_file);
-			$diff["path"] = $osb_file;
-			
-			$difficulties[basename($osb_file)] = $diff;
+			$difficulties[basename($file)] = $difficulty;
 		}
 		
 		$temp = explode(" ", basename($folder))[0];
-		if (is_numeric($temp))
-		{
-			$set_id = $temp;
-		}
-		else
-		{
-			$set_id = "";
-		}
+		$set_id = is_numeric($temp) ? $temp : "";
 		
 		$entry = array(
 			"key" => $key,
@@ -82,7 +69,9 @@ class osu_library
 			"difficulties" => $difficulties,
 		);
 		
-		if (!isset($this->db["library"])) $this->db["library"] = array();
+		// if (!isset($this->db["library"])) $this->db["library"] = array();
+		
+		$this->db["library"] = array(); // init or reset
 		$this->db["library"][$key] = $entry;
 	}
 	

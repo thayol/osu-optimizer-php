@@ -1,263 +1,235 @@
 <?php
+require_once "libraries/osu_cacher.php";
+
 class osu_parser
 {
-	public static function scan_parse_osu_file(string $osu_file) : array
+	private $cacher;
+	
+	public function __construct(osu_cacher $cacher)
 	{
-		$time_start = microtime(true);
-		$file = file($osu_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-		// osu files can get big, but why not load the full thing :3
+		$this->cacher = $cacher;
+	}
+	
+	public static function convert_event_type(string $input) : string
+	{
+		// reconverting everything to the legacy notation
+		// event types enum from lazer:
+		// https://github.com/ppy/osu/blob/master/osu.Game/Beatmaps/Legacy/LegacyEventType.cs
+		return str_replace(
+			[ "Background", "Video", "Break", "Colour", "Sprite", "Sample", "Animation" ],
+			[          "0",     "1",     "2",      "3",      "4",      "5",         "6" ],
+			$input
+		);
+	}
+	
+	public static function reverse_event_type(string $input) : string
+	{
+		return str_replace(
+			[          "0",     "1",     "2",      "3",      "4",      "5",         "6" ],
+			[ "Background", "Video", "Break", "Colour", "Sprite", "Sample", "Animation" ],
+			$input
+		);
+	}
+	
+	public function parse_osu_file_format(string $path, bool $skip_cache = false)// : array|bool // see you again in php8
+	{
+		if (!file_exists($path)) return false;
 		
-		if (stripos($file[0], "osu file format") === false) return [ "error..." ];
+		if (!$skip_cache)
+		{
+			$cached = $this->cacher->get_cache($path, hash_file("md5", $path));
+			if ($cached !== false) return $cached;
+		}
 		
-		// some files had "ZERO WIDTH NO-BREAK SPACE" characters...
-		$format = explode("osu file format ", $file[0])[1];
-		unset($file[0]); // no longer needed
+		$time_start = microtime(true); // measure parsing time
 		
-		$osu = array("Format" => $format);
-		$current_section = "UnofficialComments";
-		$osu[$current_section] = array();
-		$storyboard = array();
+		$file = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+		
+		$parsed = array();
+		
+		// file format declaration
+		if (stripos($file[0], "osu file format ") === false)
+		{
+			// the ranker script had a bug where random "ZERO WIDTH NO-BREAK SPACE"
+			// characters were at beginning of the .osu files
+			$parsed["format"] = explode("osu file format ", $file[0])[1];
+			unset($file[0]); // no longer needed
+		}
+		else if (pathinfo($path, PATHINFO_EXTENSION) == "osb")
+		{
+			$parsed["format"] = "storyboard";
+		}
+		
+		$current_section = false;
+		$needed_sections = [ "General", "Metadata", "Difficulty", "Events" ];
 		foreach ($file as $key => $line)
 		{
-			
 			if (strpos($line, "[") === 0 && strpos($line, "]") === (strlen($line)-1))
 			{
-				$current_section = str_replace([ "[", "]" ], "", $line);
-				if (!isset($osu[$current_section]))
-				{
-					$osu[$current_section] = array();
-				}
+				list($current_section, $section_type, $delimiter) = self::parse_osu_file_section_header($line, $needed_sections);
 				
-				// peppy is retarded so i have to do this...
-				switch ($current_section) {
-					case "General":
-					case "Editor":
-						$section_type = "key-value pairs";
-						$delimiter = ": ";
-						break;
-					case "Metadata":
-					case "Difficulty":
-						$section_type = "key-value pairs";
-						$delimiter = ":"; // notice the missing space
-						break;
-					case "Colours":
-						$section_type = "key-value pairs";
-						$delimiter = " : "; // WHY WOULD YOU DO THIS IF YOU ALREADY HAVE TWO TYPES OF KEY-VALUE PAIRS???????????????????
-						break;
-					case "Events":
-					case "TimingPoints":
-					case "HitObjects":
-						$section_type = "lists"; // yes, listS because one list per line
-						$delimiter = ",";
-						break;
-					default:
-						$section_type = "unknown";
-				}
-				
-				continue;
+				continue; // this line has been analyzed
 			}
 			
-			
-			// only parse the ones needed
-			switch ($current_section) {
-				case "General":
-				case "Metadata":
-				case "Difficulty":
-				case "Events":
-					$skip = false;
-					break;
-				default:
-					$skip = true;
-			}
-			
-			if ($skip) continue;
-			
-			
-			if (strpos($line, "//") === 0) // there were commented files that broke my script
+			if (strpos($line, "//") === 0 || // the editor puts hella lot of comments in the files
+				$section_type === false)
 			{
 			}
 			else if ($section_type == "key-value pairs")
 			{
+				// init empty array
+				if (!isset($parsed[$current_section])) $parsed[$current_section] = array();
+				
 				$delimiter_position = strpos($line, $delimiter);
 				
-				$value = substr($line, $delimiter_position + strlen($delimiter_position));
-				$osu[$current_section][substr($line, 0, $delimiter_position)] = $value;
+				$kv_key = substr($line, 0, $delimiter_position);
+				$kv_value = substr($line, $delimiter_position + strlen($delimiter_position));
+				
+				// after some thinking, keeping the original names was a good idea
+				$parsed[$current_section][$kv_key] = $kv_value;
 			}
 			else if ($section_type == "lists")
 			{
 				$list = explode($delimiter, $line);
-				
-				// group events by type and start time
-				if ($current_section == "Events")
+				if ($current_section == "Events") // saving the whole thing would take up too much space
 				{
-					if (strpos($line, " ") === 0) continue; // skip storyboard details lines
+					if (strpos($line, " ") === 0 || strpos($line, "_") === 0) continue; // skip storyboard details lines
 					
-					// event types: https://github.com/ppy/osu/blob/master/osu.Game/Beatmaps/Legacy/LegacyEventType.cs
-					$list[0] = str_replace(
-						[ "Background", "Video", "Break", "Colour", "Sprite", "Sample", "Animation" ],
-						[ "0",          "1",     "2",     "3",      "4",      "5",      "6" ],
-						$list[0]
-					);
+					list($event_type, $source_files) = self::gather_source_files($list);
 					
-					if ($list[0] == "5" || $list[0] == "4")
+					if ($event_type === false)
 					{
-						$storyboard[] = trim(str_replace("\\", "/", $list[3]), "\"");
 					}
-					
-					if ($list[0] == "6")
+					else if ($event_type == "Background")
 					{
-						$story_base = pathinfo(trim(str_replace("\\", "/", $list[3]), "\""));
-						if (empty($story_base["extension"])) $ext = "";
-						else $ext = "." . $story_base["extension"];
-						if (empty($story_base["dirname"])) $dir = "";
-						else $dir = $story_base["dirname"] . "/";
+						$parsed["background"] = $source_files[0] ?? "";
+					}
+					else if ($event_type == "Video")
+					{
+						$parsed["video"] = $source_files[0] ?? "";
+					}
+					else
+					{
+						// init empty array
+						if (!isset($parsed["storyboard"])) $parsed["storyboard"] = array();
 						
-						for ($i = 0; $i < intval($list[6]); $i++)
+						// add the elements to the storyboard
+						foreach ($source_files as $source_file)
 						{
-							$storyboard[] = $dir . $story_base["filename"] . $i . $ext;
+							$parsed["storyboard"][] = $source_file;
 						}
 					}
-					
-					if (!isset($osu[$current_section][$list[0]]))
-					{
-						$osu[$current_section][$list[0]] = array();
-					}
-					
-					if (!isset($osu[$current_section][$list[0]][$list[1]]))
-					{
-						$osu[$current_section][$list[0]][$list[1]] = array();
-					}
-					
-					$osu[$current_section][$list[0]][$list[1]][] = $list;
 				}
 				else
 				{
-					$osu[$current_section][] = $list;
+					// init empty array
+					if (!isset($parsed[$current_section])) $parsed[$current_section] = array();
+					
+					// just dump the non-events...
+					// 
+					// at the point of writing this
+					// comment, this section will
+					// never get used...
+					$parsed[$current_section][] = $line;
 				}
-			}
-			else
-			{
-				$osu[$current_section][] = $line; // just dump the unknown...
 			}
 		}
 		unset($file); // remove the memory leak
 		
-		
-		
-		// return $osu;
-		
-		$set_id = $osu["Metadata"]["BeatmapSetID"] ?? false;
-		if ($set_id === false)
+		if (!$skip_cache)
 		{
-			$temp = explode(" ", basename(dirname($osu_file)))[0];
-			if (is_numeric($temp))
-			{
-				$set_id = $temp;
-			}
-			else
-			{
-				$set_id = "";
-			}
+			$this->cacher->set_cache($path, $parsed);
 		}
 		
-		$background = str_replace("\\", "/", trim($osu["Events"][0][0][0][2] ?? "", "\""));
-		$audio = str_replace("\\", "/", trim($osu["General"]["AudioFilename"] ?? "", "\""));
-		$video = str_replace("\\", "/", trim($osu["Events"][1][array_key_first($osu["Events"][1] ?? array())][0][2] ?? "", "\""));
-		$storyboard = array_unique($storyboard);
-		
-		$map_id = intval($osu["Metadata"]["BeatmapID"] ?? 0);
-		if ($map_id < 1) $map_id = "";
-		$return = array(
-			"format" => $osu["Format"] ?? "",
-			"title" => $osu["Metadata"]["Title"] ?? "",
-			"artist" => $osu["Metadata"]["Artist"] ?? "",
-			"mapper" => $osu["Metadata"]["Creator"] ?? "",
-			"difficulty" => $osu["Metadata"]["Version"] ?? "",
-			"tags" => $osu["Metadata"]["Tags"] ?? "",
-			"background" => $background,
-			"audio" => $audio,
-			"video" => $video,
-			"storyboard" => $storyboard,
-			"id" => $map_id,
-			"set_id" => $set_id,
-		);
-		
-		$time_end = microtime(true);
-		$time = $time_end - $time_start;
-		$return["process_time"] = $time;
-		$return["hash"] = hash_file("md5", $osu_file);
-		
-		return $return;
+		return $parsed;
 	}
 	
-	public static function scan_parse_osb_file(string $osb_file) : array
+	public static function gather_source_files(array $list) : array
 	{
-		$time_start = microtime(true);
-		$file = file($osb_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+		$list[0] = convert_event_type($list[0]);
+		$event_type = $list[0];
 		
-		$storyboard = array();
-		$current_section = "UnofficialComments";
-		foreach ($file as $key => $line)
+		if (!in_array($event_type, [ "0", "1", "4", "5", "6" ]))
 		{
-			if (strpos($line, "[") === 0 && strpos($line, "]") === (strlen($line)-1))
-			{
-				$current_section = str_replace([ "[", "]" ], "", $line);
-				continue;
-			}
-			
-			if (!($current_section == "Events")) continue; // skip rest
-			
-			$list = explode(",", $line);
-			
-			$list[0] = str_replace(
-				[ "Background", "Video", "Break", "Colour", "Sprite", "Sample", "Animation" ],
-				[ "0",          "1",     "2",     "3",      "4",      "5",      "6" ],
-				$list[0]
-			);
-			
-			if ($list[0] == "5" || $list[0] == "4")
-			{
-				$storyboard[] = trim(str_replace("\\", "/", $list[3]), "\"");
-			}
-			
-			if ($list[0] == "6")
-			{
-				$story_base = pathinfo(trim(str_replace("\\", "/", $list[3]), "\""));
-				if (empty($story_base["extension"])) $ext = "";
-				else $ext = "." . $story_base["extension"];
-				if (empty($story_base["dirname"])) $dir = "";
-				else $dir = $story_base["dirname"] . "/";
-				
-				for ($i = 0; $i < intval($list[6]); $i++)
-				{
-					$storyboard[] = $dir . $story_base["filename"] . $i . $ext;
-				}
-			}
-				
-			$temp = explode(" ", basename(dirname($osb_file)))[0];
-			if (is_numeric($temp))
-			{
-				$set_id = $temp;
-			}
-			else
-			{
-				$set_id = "";
-			}
+			return array(false, false); // events that shouldn't be processed
 		}
 		
-		$storyboard = array_unique($storyboard);
+		$source_file = false;
+		if ($event_type == "0" || $event_type == "1")
+		{
+			$source_file = $list[2];
+		}
+		else if ($event_type == "4" || $event_type == "5" || $event_type == "6")
+		{
+			$source_file = $list[3];
+		}
 		
-		$return = array(
-			"format" => "storyboard",
-			"storyboard" => $storyboard,
-			"set_id" => $set_id,
-		);
+		// fix backslash and double quotes
+		if ($source_file !== false) $source_file = trim(str_replace("\\", "/", $source_file), "\"");
 		
-		$time_end = microtime(true);
-		$time = $time_end - $time_start;
-		$return["process_time"] = $time;
-		$return["hash"] = hash_file("md5", $osb_file);
+		if ($event_type == "6")
+		{
+			$extension = pathinfo($source_file, PATHINFO_EXTENSION) ?? "";
+			$extension = !empty($extension) ? "." . $extension : ""; // r-append dot if set
+			
+			$directory = pathinfo($source_file, PATHINFO_DIRNAME) ?? "";
+			$directory = !empty($directory) ? $directory. "/" : ""; // append slash if set
+			
+			$filename = pathinfo($source_file, PATHINFO_FILENAME);
+			
+			$frames = intval($list[6]);
+			$source_files = array();
+			for ($i = 0; $i < $frames; $i++) // fill the array
+			{
+				$source_files[] = $directory . $filename . $i . $extension;
+			}
+		}
+		else
+		{
+			$source_files = array($source_file); // pack the single-source resources into an array
+		}
 		
-		return $return;
+		return array(self::reverse_event_type($event_type), $source_files);
+	}
+	
+	// works according to the osu file format v14 specifications
+	public static function parse_osu_file_section_header(string $line, array $needed_sections = array()) : array
+	{
+		$current_section = str_replace([ "[", "]" ], "", $line);
+		
+		if (!in_array($current_section, $needed_sections))
+		{
+			// short circuit whitelist
+			return array(false, false, false);
+		}
+		
+		// peppy is retarded so i have to do this...
+		$section_type = false;
+		$delimiter = false;
+		switch ($current_section)
+		{
+			case "General":
+			case "Editor":
+				$section_type = "key-value pairs";
+				$delimiter = ": ";
+				break;
+			case "Metadata":
+			case "Difficulty":
+				$section_type = "key-value pairs";
+				$delimiter = ":"; // notice the missing space
+				break;
+			case "Colours":
+				$section_type = "key-value pairs";
+				$delimiter = " : "; // WHY WOULD YOU DO THIS IF YOU ALREADY HAVE TWO TYPES OF KEY-VALUE PAIRS???????????????????
+				break;
+			case "Events":
+			case "TimingPoints":
+			case "HitObjects":
+				$section_type = "lists"; // yes, listS because one list per line
+				$delimiter = ",";
+				break;
+		}
+		
+		return array($current_section, $section_type, $delimiter);
 	}
 }
