@@ -49,12 +49,6 @@ class osu_library
 		
 		foreach ($osu_glob as $osu_file)
 		{
-			if (isset($this->db["library"][$key][$osu_file]["hash"]))
-			{
-				if ($this->db["library"][$key][$osu_file]["hash"] == hash_file("md5", $osu_file)) continue;
-				else unset($this->db["library"][$key][$osu_file]); // recalculate
-			}
-			
 			$diff = osu_parser::scan_parse_osu_file($osu_file);
 			$diff["key"] = basename($osu_file);
 			$diff["path"] = $osu_file;
@@ -64,12 +58,6 @@ class osu_library
 		
 		foreach (glob(utils::globsafe($folder) . "/*.osb") as $osb_file)
 		{
-			if (isset($this->db["library"][$key][$osb_file]["hash"]))
-			{
-				if ($this->db["library"][$key][$osb_file]["hash"] == hash_file("md5", $osb_file)) continue;
-				else unset($this->db["library"][$key][$osb_file]); // recalculate
-			}
-			
 			$diff = osu_parser::scan_parse_osb_file($osb_file);
 			$diff["key"] = basename($osb_file);
 			$diff["path"] = $osb_file;
