@@ -86,8 +86,10 @@ foreach ($lib->get_library() as $set)
 		$proc_time += $map["parsing_time"] ?? 0;
 	}
 }
-echo "<h3>Parse time: " . $proc_time . " seconds</h3>";
-echo "<h3>Scan time: " . $lib->get_scan_time() . " seconds</h3>";
+$proc_time = round($proc_time, 3);
+$scan_time = round($lib->get_scan_time(), 3);
+echo "<h3>Total parse time: " . $proc_time . " seconds</h3>";
+echo "<h3>Scan time: " . $scan_time . " seconds</h3>";
 // foreach ($lib->get_library() as $mapset)
 // {
 	// echo '<div class="beatmapset">';

@@ -27,11 +27,24 @@ class osu_library
 		$root = str_ireplace("\\", "/", $root); // fuck windows backslash
 		$root = rtrim($root, "/"); // remove trailing slash(es)
 		
-		$this->set_root($root); // update db entry
-		
-		$glob = glob($this->get_library_folder() . "/*", GLOB_ONLYDIR);
+		// giving a different library should always cause a full rescan
+		if ($this->get_root() !== $root) 
+		{
+			$this->rescan_library($root);
+		}
 		
 		$library = $this->get_library();
+		$library_folder = $this->get_library_folder();
+		foreach ($library as $key => $entry)
+		{
+			if (!file_exists($library_folder . "/" . $key))
+			{
+				$this->unset_library_key($key);
+			};
+		}
+		
+		$glob = glob($library_folder . "/*", GLOB_ONLYDIR);
+		
 		natsort($glob); // i like wasting your processing power
 		foreach($glob as $folder)
 		{
@@ -54,6 +67,7 @@ class osu_library
 	public function rescan_library(string $root) : void
 	{
 		$this->clear_library();
+		$this->set_root($root); // update db entry
 		$this->scan_library($root);
 	}
 	
@@ -88,7 +102,7 @@ class osu_library
 		
 		if ($changed)
 		{
-			unset($this->db["library"][$key]);
+			$this->unset_library_key($key);
 			$this->scan_add_folder($folder);
 		}
 	}
@@ -142,14 +156,22 @@ class osu_library
 			"difficulties" => $difficulties,
 		);
 		
-		// if (!isset($this->db["library"])) $this->db["library"] = array();
-		
+		$this->add_to_library($key, $entry);
+	}
+	
+	
+	public function add_to_library(string $key, array $entry) : void
+	{
 		// init empty
 		if (!isset($this->db["library"])) $this->db["library"] = array();
 		
 		$this->db["library"][$key] = $entry;
 	}
 	
+	public function unset_library_key(string $key) : void
+	{
+		if (isset($this->db["library"][$key])) unset($this->db["library"][$key]);
+	}
 	
 	public function get_root() : string
 	{
