@@ -1,4 +1,5 @@
 <?php
+// todo: make it work correctly on mac & linux (case sensitivity on deletion)
 class optimizer
 {
 	public static function is_default_hitsound(string $path) : bool
@@ -106,47 +107,40 @@ class optimizer
 	{
 		$queue = array();
 		
-		$times_c = array();
-		$time_1 = microtime(true);
 		foreach ($library->get_folders() as $folder)
 		{
-			$time_start = microtime(true);
 			self::build_removand_sublist($queue, $folder, $single_level);
-			$time_end = microtime(true);
-			$times_c[$folder] = $time_end - $time_start;
 		}
-		$time_2 = microtime(true);
-		
-		arsort($times_c);
-		$times_c = array_splice($times_c, 0, 100);
-		
-		$time_3 = $time_2-$time_1;
-		echo "{$time_3}<br />";
-		echo "<pre>";
-		print_r($times_c);
-		echo "</pre>";
 		
 		return $queue;
 	}
 	
-	public static function build_excluded_list(osu_library $library) : array
+	public static function build_excluded_list(osu_library $library, bool $nuke = false) : array
 	{
 		$background_files = $library->get_backgrounds();
 		$video_files = $library->get_videos();
 		$audio_files = $library->get_audiofiles();
 		
-		$storyboard_files = $library->get_storyboards();
-		$hitsound_files = $library->get_hitsounds();
-		
-		// $osu_files = $library->get_osu_files();
-		// $osb_files = $library->get_osb_files();
-		$physical_excluded = $library->get_parsed_files();
-		
 		$essential_excluded = array_merge($background_files, $video_files, $audio_files);
-		// $physical_excluded = array_merge($osb_files, $osu_files);
-		$other_excluded = array_merge($storyboard_files, $hitsound_files);
 		
-		$excluded = array_merge($essential_excluded, $physical_excluded, $other_excluded);
+		if (!$nuke)
+		{
+			$storyboard_files = $library->get_storyboards();
+			$hitsound_files = $library->get_hitsounds();
+			
+			// $osu_files = $library->get_osu_files();
+			// $osb_files = $library->get_osb_files();
+			$physical_excluded = $library->get_parsed_files();
+			
+			// $physical_excluded = array_merge($osb_files, $osu_files);
+			$other_excluded = array_merge($storyboard_files, $hitsound_files);
+			
+			$excluded = array_merge($essential_excluded, $physical_excluded, $other_excluded);
+		}
+		else
+		{
+			$excluded = $essential_excluded;
+		}
 		
 		return $excluded;
 	}
@@ -192,16 +186,14 @@ class optimizer
 		{
 			if (self::is_skinnable_image($file) || self::is_skinnable_other($file))
 			{
-				// if (file_exists($file)) unlink($file);
-				echo $file . "<br />";
+				if (file_exists($file)) unlink($file);
 			}
 		}
-		exit(0); // testing purposes
 	}
 	
 	public static function remove_hitsounds(osu_library $library) : void
 	{
-		$removand = self::build_single_level_removand_list($library, true);
+		$removand = self::build_removand_list($library, true);
 		$exclusions = self::build_excluded_list($library);
 		
 		$junk_files = self::array_diff_ver_peppy($removand, $exclusions);
@@ -215,19 +207,22 @@ class optimizer
 		}
 	}
 	
-	public static function remove_other(osu_library $library) : void
+	public static function full_nuke(osu_library $library) : void
+	{
+		self::remove_other($library, true);
+	}
+	
+	public static function remove_other(osu_library $library, bool $nuke = false) : void
 	{
 		$removand = self::build_removand_list($library);
-		$exclusions = self::build_excluded_list($library);
+		$exclusions = self::build_excluded_list($library, $nuke);
 		
 		$junk_files = self::array_diff_ver_peppy($removand, $exclusions);
 		
 		foreach ($junk_files as $file)
 		{
 			if (self::is_skinnable($file)) continue; // ignore default hitsounds
-			// if (file_exists($file)) unlink($file);
-			echo $file . "<br />";
+			if (file_exists($file)) unlink($file);
 		}
-		exit(0); // testing purposes
 	}
 }

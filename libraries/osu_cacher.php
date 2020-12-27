@@ -1,6 +1,9 @@
 <?php
 class osu_cacher
 {
+	public static $hash_function = "md5";
+	// public static $hash_function = "crc32";
+	
 	private $root;
 	private $cache_root;
 	
@@ -34,7 +37,7 @@ class osu_cacher
 	public function get_cache(string $path, $hash=false)// : array|bool // see you again in php8
 	{
 		if (!$this->is_cached($path)) return false;
-		
+
 		$raw = file_get_contents($this->get_cached_path($path));
 		$json = json_decode($raw, true);
 		
@@ -51,7 +54,7 @@ class osu_cacher
 		$cache_dir = dirname($cache_path);
 		if (!file_exists($cache_dir)) mkdir($cache_dir, 0777, true);
 		
-		if (!isset($content["hash"])) $content["hash"] = hash_file("md5", $path);
+		if (!isset($content["hash"])) $content["hash"] = hash_file(self::$hash_function, $path);
 		
 		$encoded = json_encode($content);
 		file_put_contents($cache_path, $encoded);

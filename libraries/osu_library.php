@@ -118,13 +118,16 @@ class osu_library
 		$osb_glob = glob(utils::globsafe($folder) . "/*.osb");
 		$glob = array_merge($osu_glob, $osb_glob);
 		
+		
 		$cacher = new osu_cacher($this->get_library_folder(), self::$cache_root);
 		$parser = new osu_parser($cacher);
 		
 		foreach ($glob as $file)
 		{
 			$difficulty_key = basename($file);
+		
 			$difficulty = $parser->parse_osu_file_format($file);
+			
 			$difficulty["key"] = $difficulty_key;
 			$difficulty["path"] = $file;
 				

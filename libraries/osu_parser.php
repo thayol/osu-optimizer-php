@@ -60,7 +60,9 @@ class osu_parser
 		
 		if (!$skip_cache)
 		{
-			$cached = $this->cacher->get_cache($path, hash_file("md5", $path));
+			$hash = hash_file(osu_cacher::$hash_function, $path);
+			
+			$cached = $this->cacher->get_cache($path, $hash);
 			if ($cached !== false) return $cached;
 		}
 		
@@ -215,6 +217,7 @@ class osu_parser
 		$time_end = microtime(true);
 		$parsing_time = $time_end - $time_start;
 		$parsed["parsing_time"] = $parsing_time;
+		if (!empty($hash)) $parsed["hash"] = $hash;
 		
 		if (!$skip_cache)
 		{
