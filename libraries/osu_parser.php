@@ -31,6 +31,29 @@ class osu_parser
 		);
 	}
 	
+	// fix backslash and double quotes
+	public static function fix_filename(string $filename) : string
+	{
+		return trim(str_replace("\\", "/", $filename), "\"");
+	}
+	
+	public static function file_ver_peppy(string $path)// : array|bool // see you in php8
+	{
+		if (!file_exists($path)) return false;
+		$file = file_get_contents($path); // read normally
+		if (empty($file)) return false;
+		
+		$bom = "\xef\xbb\xbf"; // the BOM character
+		$file = str_replace($bom, "", $file); // removing BOM
+		$file = str_replace("\r\n", "\n", $file); // win CRLF to unix LF
+		$file = str_replace("\r", "\n", $file); // old mac CR to unix LF
+		$lines = explode("\n", $file); // split using LF
+		$lines = array_filter($lines); // remove empty lines
+		$lines = array_values($lines); // reindex array
+		
+		return $lines;
+	}
+	
 	public function parse_osu_file_format(string $path, bool $skip_cache = false)// : array|bool // see you again in php8
 	{
 		if (!file_exists($path)) return false;
@@ -43,28 +66,35 @@ class osu_parser
 		
 		$time_start = microtime(true); // measure parsing time
 		
-		$file = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+		$file = self::file_ver_peppy($path);
+		if ($file === false) return false;
 		
 		$parsed = array();
 		
-		// file format declaration
-		if (stripos($file[0], "osu file format ") !== false)
+		$osu_file_format_declaration = "osu file format ";
+		if (stripos($file[0], $osu_file_format_declaration) !== false)
 		{
-			// the ranker script had a bug where random "ZERO WIDTH NO-BREAK SPACE"
-			// characters were at beginning of the .osu files
-			$parsed["format"] = explode("osu file format ", $file[0])[1];
+			// random characters were at beginning of the .osu files...
+			$format = $osu_file_format_declaration . explode($osu_file_format_declaration, $file[0])[1];
 			unset($file[0]); // no longer needed
 		}
 		else if (pathinfo($path, PATHINFO_EXTENSION) == "osb")
 		{
-			$parsed["format"] = "storyboard";
+			$format = "storyboard";
 		}
+		else
+		{
+			$format = "unknown";
+		}
+		
+		$parsed["format"] = $format;
+		
 		
 		$current_section = false;
 		$section_type = false;
 		$delimiter = false;
 		$variables = [ "keys" => array(), "values" => array()]; // variables for osb files $key=value pairs
-		$needed_sections = [ "General", "Metadata", "Difficulty", "Variables", "Events" ];
+		$needed_sections = [ "General", "Metadata", "Difficulty", "Variables", "Events", "HitObjects" ];
 		foreach ($file as $key => $line)
 		{
 			if (mb_strpos($line, "[") === 0 && mb_strpos($line, "]") === (strlen($line)-1))
@@ -135,6 +165,33 @@ class osu_parser
 						}
 					}
 				}
+				else if ($current_section == "HitObjects") // saving the whole thing would take up too much space v2
+				{
+					$last = array_key_last($list);
+					if (!empty($list[$last]) && mb_strpos($list[$last], ":") !== false)
+					{
+						$hitSample = explode(":", $list[$last]);
+						$last_sample = array_key_last($hitSample);
+						if (!empty($hitSample[$last_sample]))
+						{
+							$filename = $hitSample[$last_sample];
+							$filename = self::fix_filename($filename);
+							
+							// some maps leave out the extensions
+							// (and some maps have .wav filess pointing to .ogg files........)
+							if (empty(pathinfo($filename, PATHINFO_EXTENSION)))
+							{
+								$filename = $filename . ".wav"; // just to signal it's an "audio file"
+							}
+							
+							// init empty array
+							if (!isset($parsed["hitsounds"])) $parsed["hitsounds"] = array();
+							
+							// add the element to the hitsounds
+							$parsed["hitsounds"][] = $filename;
+						}
+					}
+				}
 				else
 				{
 					// init empty array
@@ -151,8 +208,9 @@ class osu_parser
 		}
 		unset($file); // remove the memory leak
 		
-		// storyboards are overloaded with dupes (renumber to make json export to arrays)
+		// storyboards/hitsounds are overloaded with dupes (renumber to make json export to arrays)
 		if (!empty($parsed["storyboard"])) $parsed["storyboard"] = array_values(array_unique($parsed["storyboard"]));
+		if (!empty($parsed["hitsounds"])) $parsed["hitsounds"] = array_values(array_unique($parsed["hitsounds"]));
 		
 		$time_end = microtime(true);
 		$parsing_time = $time_end - $time_start;
@@ -193,8 +251,7 @@ class osu_parser
 			$source_file = str_replace($variables["keys"], $variables["values"], $source_file);
 		}
 		
-		// fix backslash and double quotes
-		if ($source_file !== false) $source_file = trim(str_replace("\\", "/", $source_file), "\"");
+		if ($source_file !== false) $source_file = self::fix_filename($source_file);
 		
 		// fix leading dot slash
 		if (mb_strpos($source_file, "./") === 0) $source_file = mb_substr($source_file, 2);
@@ -220,6 +277,23 @@ class osu_parser
 		else
 		{
 			$source_files = array($source_file); // pack the single-source resources into an array
+		}
+		
+		// artificially add a "good" extension
+		foreach ($source_files as $source_key => $source_file)
+		{
+			// some maps leave out the extensions...
+			if (empty(pathinfo($source_file, PATHINFO_EXTENSION)))
+			{
+				if ($event_type == 5)
+				{
+					$source_files[$source_key] = $source_file . ".wav"; // just to signal it's an "audio file"
+				}
+				else
+				{
+					$source_files[$source_key] = $source_file . ".png"; // just to signal it's an "image file"
+				}
+			}
 		}
 		
 		return array(self::reverse_event_type($event_type), $source_files);

@@ -17,7 +17,10 @@ Pull requests are welcome! I doubt this project would get any traffic, so feel f
  - [x] Replace all backgrounds with 1x1 black images
  - [x] Remove storyboard specific files
  - [x] Remove background videos
- - [x] Remove junk files (skins, hitsounds, leftovers from mapping etc.)
+ - [x] Remove beatmap skins
+ - [x] Remove beatmap keyed hitsounds
+ - [x] Remove beatmap default hitsounds
+ - [x] Remove junk files (mapping garbage, unused storyboard, random files, etc.)
  - [ ] Export maps to .osz
  - [ ] Delete maps based on star difficulty
  - [ ] Blacklist: the maps that should not be touched by this program

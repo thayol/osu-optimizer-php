@@ -127,7 +127,7 @@ class osu_library
 			$difficulty = $parser->parse_osu_file_format($file);
 			$difficulty["key"] = $difficulty_key;
 			$difficulty["path"] = $file;
-			
+				
 			$difficulties[$difficulty_key] = $difficulty;
 		}
 		
@@ -273,7 +273,8 @@ class osu_library
 				if (!empty($beatmap["background"]))
 				{
 					$path = $beatmapset["path"] . "/" . $beatmap["background"];
-					if (file_exists($path)) $backgrounds[] = $path;
+					// if (file_exists($path))
+					$backgrounds[] = $path;
 				}
 			}
 		}
@@ -295,7 +296,8 @@ class osu_library
 				if (!empty($beatmap["video"]))
 				{
 					$path = $beatmapset["path"] . "/" . $beatmap["video"];
-					if (file_exists($path)) $videos[] = $path;
+					// if (file_exists($path))
+					$videos[] = $path;
 				}
 			}
 		}
@@ -305,52 +307,71 @@ class osu_library
 		return $videos;
 	}
 	
-	public function get_osu_files() : array
+	public function get_parsed_files() : array
 	{
 		$db = $this->get_library();
 		
-		$osu_files = array();
+		$files = array();
 		foreach ($db as $beatmapset)
 		{
 			foreach($beatmapset["difficulties"] as $beatmap)
 			{
-				if (!empty($beatmap["format"]) && $beatmap["format"] != "storyboard")
+				if (!empty($beatmap["path"]) && !empty($beatmap["format"]))
 				{
-					if (file_exists($beatmap["path"]))
-					{
-						$osu_files[] = $beatmap["path"];
-					}
+					$files[] = $beatmap;
 				}
 			}
 		}
 		
-		$osu_files = array_unique($osu_files);
+		return $files;
+	}
+	
+	public function get_osu_files() : array
+	{
+		$files = $this->get_parsed_files();
+		
+		$osu_files = array();
+		foreach ($files as $file)
+		{
+			if (mb_strpos($beatmap["format"], "osu file format " !== false))
+			{
+				$osu_files[] = $beatmap["path"];
+			}
+		}
 		
 		return $osu_files;
 	}
 	
 	public function get_osb_files() : array
 	{
-		$db = $this->get_library();
+		$files = $this->get_parsed_files();
 		
-		$storyboard_files = array();
-		foreach ($db as $beatmapset)
+		$osb_files = array();
+		foreach ($files as $file)
 		{
-			foreach($beatmapset["difficulties"] as $beatmap)
+			if ($beatmap["format"] == "storyboard")
 			{
-				if (!empty($beatmap["format"]) && $beatmap["format"] == "storyboard")
-				{
-					if (file_exists($beatmap["path"]))
-					{
-						$storyboard_files[] = $beatmap["path"];
-					}
-				}
+				$osb_files[] = $beatmap["path"];
 			}
 		}
 		
-		$storyboard_files = array_unique($storyboard_files);
+		return $osb_files;
+	}
+	
+	public function get_broken_files() : array
+	{
+		$files = $this->get_parsed_files();
 		
-		return $storyboard_files;
+		$broken_files = array();
+		foreach ($files as $file)
+		{
+			if ($beatmap["format"] == "unknown")
+			{
+				$broken_files[] = $beatmap["path"];
+			}
+		}
+		
+		return $broken_files;
 	}
 	
 	public function get_storyboards() : array
@@ -365,7 +386,8 @@ class osu_library
 				foreach ($beatmap["storyboard"] ?? array() as $storyelement)
 				{
 					$path = $beatmapset["path"] . "/" . $storyelement;
-					if (file_exists($path)) $storyboards[] = $path;
+					// if (file_exists($path)) 
+					$storyboards[] = $path;
 				}
 			}
 		}
@@ -373,6 +395,29 @@ class osu_library
 		$storyboards = array_unique($storyboards);
 		
 		return $storyboards;
+	}
+	
+	public function get_hitsounds() : array
+	{
+		$db = $this->get_library();
+		
+		$hitsounds = array();
+		foreach ($db as $beatmapset)
+		{
+			foreach($beatmapset["difficulties"] as $beatmap)
+			{
+				foreach ($beatmap["hitsounds"] ?? array() as $hitsound)
+				{
+					$path = $beatmapset["path"] . "/" . $hitsound;
+					// if (file_exists($path))
+					$hitsounds[] = $path;
+				}
+			}
+		}
+		
+		$hitsounds = array_unique($hitsounds);
+		
+		return $hitsounds;
 	}
 	
 	public function get_audiofiles() : array
@@ -387,7 +432,8 @@ class osu_library
 				if (!empty($beatmap["General"]["AudioFilename"]))
 				{
 					$path = $beatmapset["path"] . "/" . $beatmap["General"]["AudioFilename"];
-					if (file_exists($path)) $audiofiles[] = $path;
+					// if (file_exists($path)) 
+					$audiofiles[] = $path;
 				}
 			}
 		}
@@ -395,5 +441,59 @@ class osu_library
 		$audiofiles = array_unique($audiofiles);
 		
 		return $audiofiles;
+	}
+	
+	public function get_missing_files() : array
+	{
+		$db = $this->get_library();
+		
+		$missing = array();
+		foreach ($db as $beatmapset)
+		{
+			foreach($beatmapset["difficulties"] as $beatmap)
+			{
+				if (!empty($beatmap["General"]["AudioFilename"]))
+				{
+					$path = $beatmapset["path"] . "/" . $beatmap["General"]["AudioFilename"];
+					if (!file_exists($path)) $missing[] = $path;
+				}
+				
+				if (!empty($beatmap["background"]))
+				{
+					$path = $beatmapset["path"] . "/" . $beatmap["background"];
+					if (!file_exists($path)) $missing[] = $path;
+				}
+				
+				if (!empty($beatmap["video"]))
+				{
+					$path = $beatmapset["path"] . "/" . $beatmap["video"];
+					if (!file_exists($path)) $missing[] = $path;
+				}
+				
+				foreach ($beatmap["storyboard"] ?? array() as $storyelement)
+				{
+					$path = $beatmapset["path"] . "/" . $storyelement;
+					if (!file_exists($path)) $missing[] = $path;
+				}
+				
+				foreach ($beatmap["hitsounds"] ?? array() as $hitsound)
+				{
+					$path = $beatmapset["path"] . "/" . $hitsound;
+					if (!file_exists($path)) $missing[] = $path;
+				}
+				
+				if (!empty($beatmap["format"]))
+				{
+					if (!file_exists($beatmap["path"]))
+					{
+						$missing[] = $beatmap["path"];
+					}
+				}
+			}
+		}
+		
+		$missing = array_unique($missing);
+		
+		return $missing;
 	}
 }

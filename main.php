@@ -3,6 +3,7 @@
 // todo: repack osz file
 // todo: dupe checker
 // todo: stardiff deleter
+// todo: mode deleter
 
 
 // imports
@@ -68,7 +69,7 @@ if (isset($_GET["purify"]))
 $start = file_get_contents("resources/start.html");
 $start = str_replace("{{ STYLE }}", file_get_contents("resources/style.css"), $start);
 echo $start;
-dump($lib, "lib");
+// dump($lib, "lib");
 echo '<a href="./?scan">[Scan]</a> ';
 echo '<a href="./?rescan">[Force rescan]</a> ';
 echo '<a href="./?blacken">[Blacken]</a> ';
