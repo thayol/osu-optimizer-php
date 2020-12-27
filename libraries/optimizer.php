@@ -115,34 +115,47 @@ class optimizer
 		return $queue;
 	}
 	
-	public static function build_excluded_list(osu_library $library, bool $nuke = false) : array
+	public static function build_excluded_list(osu_library $library, array $except = array()) : array
 	{
-		$background_files = $library->get_backgrounds();
-		$video_files = $library->get_videos();
-		$audio_files = $library->get_audiofiles();
+		if (in_array("backgrounds", $except)) $background_files = array();
+		else $background_files = $library->get_backgrounds();
+		
+		if (in_array("videos", $except)) $video_files = array();
+		else $video_files = $library->get_videos();
+		
+		if (in_array("audio", $except)) $audio_files = array();
+		else $audio_files = $library->get_audiofiles();
 		
 		$essential_excluded = array_merge($background_files, $video_files, $audio_files);
 		
-		if (!$nuke)
+		
+		if (in_array("osu", $except) ||in_array("osb", $except))
 		{
-			$storyboard_files = $library->get_storyboards();
-			$hitsound_files = $library->get_hitsounds();
+			if (in_array("osu", $except)) $osu_files = array();
+			else $osu_files = $library->get_osu_files();
 			
-			// $osu_files = $library->get_osu_files();
-			// $osb_files = $library->get_osb_files();
-			$physical_excluded = $library->get_parsed_files();
+			if (in_array("osb", $except)) $osb_files = array();
+			else $osb_files = $library->get_osb_files();
 			
-			// $physical_excluded = array_merge($osb_files, $osu_files);
-			$other_excluded = array_merge($storyboard_files, $hitsound_files);
-			
-			$excluded = array_merge($essential_excluded, $physical_excluded, $other_excluded);
+			$physical_excluded = array_merge($osu_files, $osb_files);
 		}
 		else
 		{
-			$excluded = $essential_excluded;
+			if (in_array("parsed", $except)) $physical_excluded = array();
+			else $physical_excluded = $library->get_parsed_files();
 		}
 		
-		return $excluded;
+		
+		if (in_array("storyboard", $except)) $storyboard_files = array();
+		else $storyboard_files = $library->get_storyboards();
+		
+		if (in_array("hitsounds", $except)) $hitsound_files = array();
+		else $hitsound_files = $library->get_hitsounds();
+		
+		$other_excluded = array_merge($storyboard_files, $hitsound_files);
+		
+		
+		return array_merge($essential_excluded, $physical_excluded, $other_excluded);
 	}
 	
 	public static function cut_extension(string $path) : string
@@ -194,7 +207,7 @@ class optimizer
 	public static function remove_hitsounds(osu_library $library) : void
 	{
 		$removand = self::build_removand_list($library, true);
-		$exclusions = self::build_excluded_list($library);
+		$exclusions = self::build_excluded_list($library, [ "hitsounds" ]);
 		
 		$junk_files = self::array_diff_ver_peppy($removand, $exclusions);
 		
@@ -205,6 +218,14 @@ class optimizer
 				if (file_exists($file)) unlink($file);
 			}
 		}
+		
+		$hitsounds_safe = $library->get_hitsounds();
+		$hitsounds_safe = array_diff($hitsounds_safe, $library->get_audiofiles());
+		
+		foreach ($hitsounds_safe as $file)
+		{
+			if (file_exists($file)) unlink($file);
+		}
 	}
 	
 	public static function full_nuke(osu_library $library) : void
@@ -214,8 +235,16 @@ class optimizer
 	
 	public static function remove_other(osu_library $library, bool $nuke = false) : void
 	{
+		if ($nuke)
+		{
+			$excluded_arg = [ "videos", "osb", "storyboard", "hitsounds" ];
+		}
+		else
+		{
+			$excluded_arg = array();
+		}
 		$removand = self::build_removand_list($library);
-		$exclusions = self::build_excluded_list($library, $nuke);
+		$exclusions = self::build_excluded_list($library, $excluded_arg);
 		
 		$junk_files = self::array_diff_ver_peppy($removand, $exclusions);
 		
