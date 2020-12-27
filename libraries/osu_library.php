@@ -307,14 +307,15 @@ class osu_library
 		return $videos;
 	}
 	
-	public function get_parsed_files() : array
+	public function get_parsed_files_with_details() : array
 	{
 		$db = $this->get_library();
 		
 		$files = array();
 		foreach ($db as $beatmapset)
 		{
-			foreach($beatmapset["difficulties"] as $beatmap)
+			// warning: key isn't globally unique!!
+			foreach($beatmapset["difficulties"] as $key => $beatmap)
 			{
 				if (!empty($beatmap["path"]) && !empty($beatmap["format"]))
 				{
@@ -326,16 +327,30 @@ class osu_library
 		return $files;
 	}
 	
+	public function get_parsed_files() : array
+	{
+		$files = $this->get_parsed_files_with_details();
+		$paths = array();
+		foreach ($files as $file)
+		{
+			$paths[] = $file["path"];
+		}
+		
+		return $paths;
+	}
+	
 	public function get_osu_files() : array
 	{
-		$files = $this->get_parsed_files();
+		$files = $this->get_parsed_files_with_details();
+		
+		$osu_file_format_declaration = "osu file format ";
 		
 		$osu_files = array();
 		foreach ($files as $file)
 		{
-			if (mb_strpos($beatmap["format"], "osu file format " !== false))
+			if (mb_strpos($file["format"], $osu_file_format_declaration) !== false)
 			{
-				$osu_files[] = $beatmap["path"];
+				$osu_files[] = $file["path"];
 			}
 		}
 		
@@ -344,14 +359,14 @@ class osu_library
 	
 	public function get_osb_files() : array
 	{
-		$files = $this->get_parsed_files();
+		$files = $this->get_parsed_files_with_details();
 		
 		$osb_files = array();
 		foreach ($files as $file)
 		{
-			if ($beatmap["format"] == "storyboard")
+			if ($file["format"] == "storyboard")
 			{
-				$osb_files[] = $beatmap["path"];
+				$osb_files[] = $file["path"];
 			}
 		}
 		
@@ -360,7 +375,7 @@ class osu_library
 	
 	public function get_broken_files() : array
 	{
-		$files = $this->get_parsed_files();
+		$files = $this->get_parsed_files_with_details();
 		
 		$broken_files = array();
 		foreach ($files as $file)

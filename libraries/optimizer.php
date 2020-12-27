@@ -91,72 +91,31 @@ class optimizer
 	private static function build_removand_sublist(string $folder) : array
 	{
 		$queue = array();
-		$lowercase = array();
 		
 		foreach (glob(utils::globsafe($folder) . "/*") as $file)
 		{
 			if (is_dir($file))
 			{
-				list($new_queue, $new_lowercase) = self::build_removand_sublist($file); // recursion
-				
-				$lowercase = array_merge($lowercase, $new_lowercase);
-				$queue = array_merge($queue, $new_queue);
+				$queue = array_merge($queue, self::build_removand_sublist($file)); // recursion
 			}
 			else
 			{
 				$queue[] = $file;
-				$lowercase[] = strtolower($file);
-			}
-		}
-		
-		return array($queue, $lowercase);
-	}
-	
-	public static function build_removand_list(osu_library $library) : array
-	{
-		$queue = array();
-		$lowercase = array();
-		
-		foreach ($library->get_folders() as $folder)
-		{
-			list($new_queue, $new_lowercase) = self::build_removand_sublist($folder);
-			$queue = array_merge($queue, $new_queue);
-			$lowercase = array_merge($lowercase, $new_lowercase);
-		}
-		
-		return array($queue, $lowercase);
-	}
-	
-	public static function build_empty_dir_sublist(string $folder) : array
-	{
-		$queue = array();
-		
-		$glob = glob(utils::globsafe($folder) . "/*");
-		if (empty($glob))
-		{
-			$queue[] = strtolower($file);
-		}
-		else
-		{
-			foreach ($glob as $file)
-			{
-				if (is_dir($file))
-				{
-					$queue = array_merge($queue, self::build_empty_dir_sublist($file));
-				}
 			}
 		}
 		
 		return $queue;
 	}
 	
-	public static function build_empty_dir_list(osu_library $library) : array
+	public static function build_removand_list(osu_library $library) : array
 	{
 		$queue = array();
+		
 		foreach ($library->get_folders() as $folder)
 		{
-			$queue = array_merge($queue, self::build_empty_dir_sublist($folder));
+			$queue = array_merge($queue, self::build_removand_sublist($folder));
 		}
+		
 		return $queue;
 	}
 	
@@ -164,76 +123,62 @@ class optimizer
 	{
 		$background_files = $library->get_backgrounds();
 		$video_files = $library->get_videos();
+		$audio_files = $library->get_audiofiles();
+		
 		$storyboard_files = $library->get_storyboards();
 		$hitsound_files = $library->get_hitsounds();
-		$audio_files = $library->get_audiofiles();
-		$osb_files = $library->get_osb_files();
-		$osu_files = $library->get_osu_files();
+		
+		// $osu_files = $library->get_osu_files();
+		// $osb_files = $library->get_osb_files();
+		$physical_excluded = $library->get_parsed_files();
 		
 		$essential_excluded = array_merge($background_files, $video_files, $audio_files);
-		$physical_excluded = array_merge($osb_files, $osu_files);
+		// $physical_excluded = array_merge($osb_files, $osu_files);
 		$other_excluded = array_merge($storyboard_files, $hitsound_files);
+		
 		$excluded = array_merge($essential_excluded, $physical_excluded, $other_excluded);
 		
-		$lowercase_excluded = array();
-		foreach ($excluded as $key => $value)
+		return $excluded;
+	}
+	
+	public static function cut_extension(string $path) : string
+	{
+		$directory = pathinfo($path, PATHINFO_DIRNAME) ?? "";
+		if (!empty($directory)) $directory .= "/"; // append slash if set
+		
+		return $directory . (pathinfo($path, PATHINFO_FILENAME) ?? "");
+	}
+	
+	// because peppy thinks file extensions are wildcards:
+	// you can have image.mp3 in storyboards in jfif
+	// and you can have ogg vorbis hitsounds in mysound.wav.png.whatever
+	public static function array_diff_ver_peppy(array $files, array $exclusions) : array
+	{
+		// osu! is case insensitive
+		$files_lowercase = array();
+		foreach ($files as $key => $value)
 		{
-			$lowercase_excluded[$key] = strtolower($value);
+			$files_lowercase[$key] = self::cut_extension(mb_strtolower($value));
 		}
 		
-		$peppy_excluded_lowercase = array();
-		foreach ($lowercase_excluded as $value)
+		$exclusions_lowercase = array();
+		foreach ($exclusions as $key => $value)
 		{
-			$extension = pathinfo($value, PATHINFO_EXTENSION) ?? "";
-			
-			$directory = pathinfo($value, PATHINFO_DIRNAME) ?? "";
-			$directory = !empty($directory) ? $directory. "/" : ""; // append slash if set
-			
-			$filename = pathinfo($value, PATHINFO_FILENAME);
-			
-			if (mb_ereg_match("([jJ][pP][eE]?[gG]|[pP][nN][gG])", $extension))
-			{
-				$image_extensions = [ "png", "jpg", "jpeg", strtolower($extension) ];
-				$image_extensions = array_unique($image_extensions);
-				foreach ($image_extensions as $image_extension)
-				{
-					$peppy_excluded_lowercase[] = $directory . $filename . "." . $image_extension;
-				}
-			}
-			else if (mb_ereg_match("([wW][aA][vV]|[mM][pP]3|[oO][gG][gG])", $extension))
-			{
-				$sound_extensions = [ "wav", "mp3", "ogg", strtolower($extension) ];
-				$sound_extensions = array_unique($sound_extensions);
-				foreach ($sound_extensions as $sound_extension)
-				{
-					$peppy_excluded_lowercase[] = $directory . $filename . "." . $sound_extension;
-				}
-			}
-			else
-			{
-				$peppy_excluded_lowercase[] = $value;
-			}
+			$exclusions_lowercase[$key] = self::cut_extension(mb_strtolower($value));
 		}
 		
-		return $peppy_excluded_lowercase;
+		// return values from the original, but only the ones that did not get removed
+		return array_intersect_key($files, array_diff($files_lowercase, $exclusions_lowercase));
 	}
 	
 	public static function remove_other(osu_library $library) : void
 	{
-		// get the path and lowercase paths
-		list($removand, $removand_lower) = self::build_removand_list($library);
-		
-		// get the lowercase exclusions
+		$removand = self::build_removand_list($library);
 		$exclusions = self::build_excluded_list($library);
 		
-		// subtract the exclusions (lowercase because osu! is case-insensitive)
-		$check = array_diff($removand_lower, $exclusions);
+		$junk_files = self::array_diff_ver_peppy($removand, $exclusions);
 		
-		// take the original paths based on the keys from the subtraction above
-		// (this is only important for case-sensitive file systems like unix)
-		$final = array_intersect_key($removand, $check);
-		
-		foreach ($final as $file)
+		foreach ($junk_files as $file)
 		{
 			if (self::is_skinnable($file)) continue; // ignore default hitsounds
 			// if (file_exists($file)) unlink($file);
