@@ -78,6 +78,12 @@ if (isset($_GET["purify"]))
 	redirect("./");
 }
 
+if (isset($_GET["nuke"]))
+{
+	@optimizer::full_nuke($lib);
+	redirect("./");
+}
+
 $start = file_get_contents("resources/start.html");
 $start = str_replace("{{ STYLE }}", file_get_contents("resources/style.css"), $start);
 echo $start;
@@ -90,6 +96,7 @@ echo '<a href="./?nosb">[Remove storyboards]</a>&nbsp;&nbsp; ';
 echo '<a href="./?noskin">[Remove beatmap skins]</a>&nbsp;&nbsp; ';
 echo '<a href="./?nohit">[Remove custom hitsounds]</a>&nbsp;&nbsp; ';
 echo '<a href="./?purify">[Remove junk files]</a>&nbsp;&nbsp; ';
+echo '<a href="./?nuke">[NUKE]</a>&nbsp;&nbsp; ';
 echo '<br /><br /><br /><a href="./splitter.php?page=1">[Explore]</a>&nbsp;&nbsp; ';
 echo "<h2>" . count($lib->get_library()) . " mapsets loaded.</h2>";
 echo "<h3>osu! folder: " . $lib->get_root() . "</h3>";
