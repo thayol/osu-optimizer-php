@@ -60,6 +60,18 @@ if (isset($_GET["novid"]))
 	redirect("./");
 }
 
+if (isset($_GET["noskin"]))
+{
+	@optimizer::remove_skins($lib);
+	redirect("./");
+}
+
+if (isset($_GET["nohit"]))
+{
+	@optimizer::remove_hitsounds($lib);
+	redirect("./");
+}
+
 if (isset($_GET["purify"]))
 {
 	@optimizer::remove_other($lib);
@@ -70,13 +82,15 @@ $start = file_get_contents("resources/start.html");
 $start = str_replace("{{ STYLE }}", file_get_contents("resources/style.css"), $start);
 echo $start;
 // dump($lib, "lib");
-echo '<a href="./?scan">[Scan]</a> ';
-echo '<a href="./?rescan">[Force rescan]</a> ';
-echo '<a href="./?blacken">[Blacken]</a> ';
-echo '<a href="./?nosb">[NoSB]</a> ';
-echo '<a href="./?novid">[Novid]</a> ';
-echo '<a href="./?purify">[Purify]</a> ';
-echo '<br /><br /><br /><a href="./splitter.php?page=1">[Explore]</a> ';
+echo '<a href="./?scan">[Scan]</a>&nbsp;&nbsp; ';
+echo '<a href="./?rescan">[Force rescan]</a>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;';
+echo '<a href="./?blacken">[Remove backgrounds]</a>&nbsp;&nbsp; ';
+echo '<a href="./?novid">[Remove videos]</a>&nbsp;&nbsp; ';
+echo '<a href="./?nosb">[Remove storyboards]</a>&nbsp;&nbsp; ';
+echo '<a href="./?noskin">[Remove beatmap skins]</a>&nbsp;&nbsp; ';
+echo '<a href="./?nohit">[Remove custom hitsounds]</a>&nbsp;&nbsp; ';
+echo '<a href="./?purify">[Remove junk files]</a>&nbsp;&nbsp; ';
+echo '<br /><br /><br /><a href="./splitter.php?page=1">[Explore]</a>&nbsp;&nbsp; ';
 echo "<h2>" . count($lib->get_library()) . " mapsets loaded.</h2>";
 echo "<h3>osu! folder: " . $lib->get_root() . "</h3>";
 

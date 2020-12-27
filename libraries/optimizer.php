@@ -71,7 +71,12 @@ class optimizer
 	
 	public static function remove_storyboards(osu_library $library) : void
 	{
-		foreach ($library->get_storyboards() as $file)
+		// exclude vital files if they are used in the storyboard
+		$storyboards_safe = $library->get_storyboards();
+		$storyboards_safe = array_diff($storyboards_safe, $library->get_backgrounds());
+		$storyboards_safe = array_diff($storyboards_safe, $library->get_audiofiles());
+		
+		foreach ($storyboards_safe as $file)
 		{
 			if (file_exists($file)) unlink($file);
 		}
@@ -80,41 +85,46 @@ class optimizer
 		{
 			if (file_exists($file)) unlink($file);
 		}
-		
-		$empty = self::build_empty_dir_list($library);
-		foreach ($empty as $folder)
-		{
-			rmdir($folder);
-		}
 	}
 	
-	private static function build_removand_sublist(string $folder) : array
+	private static function build_removand_sublist(array &$queue, string $folder, bool $single_level = false)
 	{
-		$queue = array();
-		
 		foreach (glob(utils::globsafe($folder) . "/*") as $file)
 		{
 			if (is_dir($file))
 			{
-				$queue = array_merge($queue, self::build_removand_sublist($file)); // recursion
+				if (!$single_level) self::build_removand_sublist($queue, $file, false); // recursion
 			}
 			else
 			{
 				$queue[] = $file;
 			}
 		}
-		
-		return $queue;
 	}
 	
-	public static function build_removand_list(osu_library $library) : array
+	public static function build_removand_list(osu_library $library, bool $single_level = false) : array
 	{
 		$queue = array();
 		
+		$times_c = array();
+		$time_1 = microtime(true);
 		foreach ($library->get_folders() as $folder)
 		{
-			$queue = array_merge($queue, self::build_removand_sublist($folder));
+			$time_start = microtime(true);
+			self::build_removand_sublist($queue, $folder, $single_level);
+			$time_end = microtime(true);
+			$times_c[$folder] = $time_end - $time_start;
 		}
+		$time_2 = microtime(true);
+		
+		arsort($times_c);
+		$times_c = array_splice($times_c, 0, 100);
+		
+		$time_3 = $time_2-$time_1;
+		echo "{$time_3}<br />";
+		echo "<pre>";
+		print_r($times_c);
+		echo "</pre>";
 		
 		return $queue;
 	}
@@ -152,7 +162,7 @@ class optimizer
 	// because peppy thinks file extensions are wildcards:
 	// you can have image.mp3 in storyboards in jfif
 	// and you can have ogg vorbis hitsounds in mysound.wav.png.whatever
-	public static function array_diff_ver_peppy(array $files, array $exclusions) : array
+	public static function array_diff_ver_peppy(array &$files, array &$exclusions) : array
 	{
 		// osu! is case insensitive
 		$files_lowercase = array();
@@ -171,6 +181,40 @@ class optimizer
 		return array_intersect_key($files, array_diff($files_lowercase, $exclusions_lowercase));
 	}
 	
+	public static function remove_skins(osu_library $library) : void
+	{
+		$removand = self::build_removand_list($library, true);
+		$exclusions = self::build_excluded_list($library);
+		
+		$junk_files = self::array_diff_ver_peppy($removand, $exclusions);
+		
+		foreach ($junk_files as $file)
+		{
+			if (self::is_skinnable_image($file) || self::is_skinnable_other($file))
+			{
+				// if (file_exists($file)) unlink($file);
+				echo $file . "<br />";
+			}
+		}
+		exit(0); // testing purposes
+	}
+	
+	public static function remove_hitsounds(osu_library $library) : void
+	{
+		$removand = self::build_single_level_removand_list($library, true);
+		$exclusions = self::build_excluded_list($library);
+		
+		$junk_files = self::array_diff_ver_peppy($removand, $exclusions);
+		
+		foreach ($junk_files as $file)
+		{
+			if (self::is_skinnable_sound($file))
+			{
+				if (file_exists($file)) unlink($file);
+			}
+		}
+	}
+	
 	public static function remove_other(osu_library $library) : void
 	{
 		$removand = self::build_removand_list($library);
@@ -184,12 +228,6 @@ class optimizer
 			// if (file_exists($file)) unlink($file);
 			echo $file . "<br />";
 		}
-		exit(0);
-		
-		$empty = self::build_empty_dir_list($library);
-		foreach ($empty as $folder)
-		{
-			rmdir($folder);
-		}
+		exit(0); // testing purposes
 	}
 }
