@@ -23,6 +23,7 @@ Pull requests are welcome! I doubt this project would get any traffic, so feel f
  - [x] Remove junk files (mapping garbage, unused storyboard, random files, etc.)
  - [ ] Export maps to .osz
  - [ ] Delete maps based on star difficulty
+ - [ ] Delete maps based on game mode
  - [ ] Blacklist: the maps that should not be touched by this program
 
 ## Warning!
