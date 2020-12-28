@@ -13,8 +13,5 @@ set_time_limit(298800);
 // the future
 ini_set('memory_limit', '1024M');
 
-// git does not like empty folders
-if (!file_exists("session")) mkdir("session");
-
 // the entry point
 require "main.php";

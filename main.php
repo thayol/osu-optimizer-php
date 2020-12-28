@@ -1,23 +1,46 @@
 <?php
 // todo: whitelist / blacklist
-// todo: repack osz file
 // todo: dupe checker
 // todo: stardiff deleter
 // todo: mode deleter
+
+// git does not like empty folders
+if (!file_exists("session")) mkdir("session");
+if (!file_exists("session/cache")) mkdir("session/cache");
+if (!file_exists("session/osz")) mkdir("session/osz");
 
 
 // imports
 require_once "libraries/osu_library.php";
 require_once "libraries/optimizer.php";
+require_once "libraries/optimizer_settings.php";
 require_once "libraries/utils.php";
 require_once "libraries/template_engine.php";
 require_once "temp/dump.php";
 
+
+$settings_path = "session/settings.json";
+$settings = new optimizer_settings($settings_path);
 $lib = new osu_library();
 
 $display = "start";
 
-if ($lib->is_loaded())
+if (isset($_GET["settings"]) || empty($settings->get_osu_path()))
+{
+	// $display = "start";
+}
+else if (!empty($_GET["notice"]))
+{
+	$display = "notice";
+	$notice = $_GET["notice"];
+}
+else if (!empty($_GET["warn"]) && !empty($_GET["forward"]))
+{
+	$display = "warn";
+	$forward = $_GET["forward"];
+	$warn = $_GET["warn"];
+}
+else if ($lib->is_loaded())
 {
 	$display = "main";
 }
@@ -28,28 +51,39 @@ function redirect($path)
 	exit(0); // TERMINATE CURRENT SCRIPT!
 }
 
-$te = new template_engine();
-if ($display == "main")
+if (!empty($settings->get_osu_path()))
 {
 	if (isset($_GET["rescan"]))
 	{
-		$lib->rescan_library(json_decode(file_get_contents("session/settings.json"), true)["osu_folder"]);
+		$lib->rescan_library($settings->get_osu_path());
 		$lib->save_db();
 		redirect("./");
 	}
 
 	if (isset($_GET["scan"]))
 	{
-		$lib->scan_library(json_decode(file_get_contents("session/settings.json"), true)["osu_folder"]);
+		$lib->scan_library($settings->get_osu_path());
 		$lib->save_db();
 		redirect("./");
 	}
+}
 
-	if (isset($_GET["repack"]) && !empty($_GET["key"]))
+$te = new template_engine();
+if ($display == "main")
+{
+	if (isset($_GET["repack"]))
 	{
-		$key = $_GET["key"];
-		$dl = @optimizer::repack($lib, $key);
-		redirect("./" . $dl);
+		if (!empty($_GET["key"]))
+		{
+			$key = $_GET["key"];
+			$dl = @optimizer::repack($lib, $key);
+			redirect("./" . $dl);
+		}
+		else if (isset($_GET["all"]))
+		{
+			@optimizer::repack_all($lib);
+			redirect("./?notice=repack");
+		}
 	}
 
 	if (isset($_GET["blacken"]))
@@ -95,6 +129,7 @@ if ($display == "main")
 	}
 
 	$options = array(
+		[ "./?settings", "Settings", "Go back to the setup/settings screen." ],
 		[ "./?scan", "Scan", "Only scan for changes." ],
 		[ "./?rescan", "Force rescan", "Fully rescan the library. <i>(cached)</i>" ],
 		[ "./?blacken", "Remove backgrounds", "Replace the background files with 1x1 black images." ],
@@ -104,6 +139,7 @@ if ($display == "main")
 		[ "./?nohit", "Remove custom hitsounds", "Does not remove storyboard elements." ],
 		[ "./?purify", "Remove junk files", "Remove everything that isn't referenced in .osu or .osb files." ],
 		[ "./?nuke", "NUKE", "Remove everything that isn't .osu or a referenced audio/background file. Note: old/bad maps might lose vital elements!" ],
+		[ "./?warn=repack&forward=" . urlencode("./?repack&all"), "Repack all", "Repack all maps to .osz files. Note: you should not share exported maps; always use official osu! links." ],
 		[ "./splitter.php?page=1", "Explore", "TBD" ],
 	);
 	
@@ -136,14 +172,36 @@ if ($display == "main")
 		]);
 	}
 	
-	echo $te->get_html();
-	
 	// dump($lib, "lib");
+}
+else if ($display == "notice")
+{
+	$notice_upper = strtoupper($notice);
+	$te->set_block_template("CONTENT", "NOTICE_{$notice_upper}");
+}
+else if ($display == "warn")
+{
+	$warn_upper = strtoupper($warn);
+	$te->set_block("WARN_FORWARD_LINK", $forward);
+	$te->set_block_template("CONTENT", "WARN_{$warn_upper}");
 }
 else if ($display == "start")
 {
+	if (!empty($_POST["osu_folder"]))
+	{
+		$settings->set_osu_path($_POST["osu_folder"]);
+		$settings->save();
+		redirect("./?scan");
+	}
 	
+	$te->set_block_template("CONTENT", "SETTINGS");
+	if (!empty($settings->get_osu_path()))
+	{
+		$te->set_block_template("SETTINGS_BACK", "SETTINGS_BACK_SOURCE");
+	}
 }
+	
+echo $te->get_html();
 
 
 // foreach ($lib->get_library() as $mapset)

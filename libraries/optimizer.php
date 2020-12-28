@@ -256,6 +256,14 @@ class optimizer
 		}
 	}
 	
+	public static function repack_all(osu_library $library) : void
+	{
+		foreach ($library->get_library() as $key => $mapset)
+		{
+			self::repack($library, $mapset["key"]);
+		}
+	}
+	
 	public static function repack(osu_library $library, string $key) : string
 	{
 		$path = $library->get_library()[$key]["path"] ?? "";

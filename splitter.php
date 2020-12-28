@@ -52,36 +52,16 @@ if ($format == "html")
 		else $difftext = "difficulties";
 		echo $value["id"] . ": " . $firstdiff["Metadata"]["Artist"] . " - " . $firstdiff["Metadata"]["Title"] . " (" . $diffcount . " {$difftext})\n";
 	}
-	// $proc_times = array();
-	// foreach ($library as $key => $set)
-	// {
-		// $tiempo = 0;
-		// foreach ($set["difficulties"] as $map)
-		// {
-			// $tiempo += $map["parsing_time"];
-		// }
-		// $proc_times[$key] = $tiempo;
-	// }
-
-	// arsort($proc_times);
-
-	// foreach ($proc_times as $key => $tiempo)
-	// {
-		// $value = $library[$key];
-		// $firstdiff = $value["difficulties"][array_key_first($value["difficulties"])];
-		// $diffcount = 0;
-		// foreach ($value["difficulties"] as $diff)
-		// {
-			// if ($diff["format"] != "storyboard")
-			// {
-				// $diffcount++;
-			// }
-		// }
-		// echo str_pad(round($tiempo, 5), 7, "0") . "s " . $value["id"] . ": " . $firstdiff["Metadata"]["Artist"] . " - " . $firstdiff["Metadata"]["Title"] . " (" . $diffcount . " difficulties)\n";
-	// }
 }
 else // default to json in every other case
 {
+	$response = array(
+		"page" => $page,
+		"maxpage" => $maxpage,
+		"pagesize" => $pagesize,
+		"mapsets" => $partial_library ?? array(),
+	);
+	
 	header('Content-Type: application/json');
-	echo json_encode($partial_library);
+	echo json_encode($response);
 }

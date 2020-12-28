@@ -1,5 +1,6 @@
 var xmlhttp = new XMLHttpRequest();
 var page = 1;
+var maxpage = 1;
 var url = "./splitter.php?format=json&page=";
 updateBrowser();
 
@@ -34,17 +35,38 @@ function nextPage() {
 	updateBrowser();
 }
 
-function changeBrowser(mapsets)
+function firstPage() {
+	page = 1;
+	updateBrowser();
+}
+
+function lastPage() {
+	page = maxpage;
+	updateBrowser();
+}
+
+function changeBrowser(response)
 {
 	var browser = document.getElementById("browser");
 	
-	var output = "<div>Page " + page.toString() + "</div>";
+	if (!response.page)
+	{
+		return;
+	}
+	
+	if (response.maxpage)
+	{
+		maxpage = response.maxpage;
+	}
+	
+	var output = "<div>Page " + page.toString() + "/" + response.maxpage.toString() + "</div>";
 	
 	var mapsetTemplate = `{{ MAIN_BROWSER_TEMPLATE_MAPSET }}`;
 	var template = `{{ MAIN_BROWSER_TEMPLATE_DIFFICULTY }}`;
-	for (var mapsetKey of Object.keys(mapsets))
+	
+	for (var mapsetKey of Object.keys(response.mapsets))
 	{
-		var mapset = mapsets[mapsetKey];
+		var mapset = response.mapsets[mapsetKey];
 		var subOutput = "";
 		var summary = true;
 		

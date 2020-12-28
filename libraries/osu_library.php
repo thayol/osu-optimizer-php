@@ -178,7 +178,7 @@ class osu_library
 	
 	public function get_root() : string
 	{
-		return $this->db["root"];
+		return $this->db["root"] ?? "";
 	}
 	
 	public function set_root(string $root) : void

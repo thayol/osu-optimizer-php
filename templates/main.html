@@ -16,8 +16,13 @@
 	</div>
 	<div class="main-item">
 		<h2 id="a">Browser</h2>
-		<a onclick="prevPage()">[ Previous ]</a> &nbsp;
-		<a onclick="nextPage()">[ Next ]</a>
+		<div class="browser-navbar">
+			<a onclick="firstPage()">[ &lt;&lt; First ]</a> &nbsp;
+			<a onclick="prevPage()">[ &lt; Previous ]</a> &nbsp;
+			<a onclick="nextPage()">[ Next &gt; ]</a> &nbsp;
+			<a onclick="lastPage()">[ Last &gt;&gt; ]</a> &nbsp;
+		</div>
+		<div id="pagenumber"></div>
 		<div id="browser" class="browser">
 			<!-- todo JS -->
 		</div>
