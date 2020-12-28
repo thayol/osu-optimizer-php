@@ -1,0 +1,67 @@
+html {
+	font-family: Roboto, sans-serif;
+	background-color: #111111;
+	color: White;
+}
+.beatmapset, .beatmap {
+	border: 1px solid white;
+}
+
+.beatmap {
+	margin: 5px 0;
+	padding: 10px;
+}
+a:link, a:hover, a:active, a:visited {
+	color: HotPink;
+	text-decoration: inherit;
+}
+.small-background {
+	max-height: 100px;
+}
+.option-description {
+	font-size: 0.9em;
+	text-decoration: italics;
+	color: #dddddd;
+}
+.option-title, .option-description, .option-link {
+	margin: 0;
+}
+.option-link {
+	position: absolute;
+	right: 10px; bottom: 10px;
+}
+.options {
+	display: flex;
+	flex-flow: row wrap;
+	justify-content: flex-start;
+}
+.option {
+	position: relative;
+	flex: 1;
+	min-width: 300px;
+	margin: 5px;
+	padding: 10px;
+	border: 1px solid white;
+}
+.main-container {
+	display: flex;
+	flex-flow: column nowrap;
+}
+.main-item {
+	flex: 1;
+	border: 1px solid white;
+	padding: 10px;
+	margin: 5px;
+}
+.main-container>h1, .main-container>h3 {
+	text-align: center;
+	margin: 0;
+	padding: 0;
+}
+.main-item>h2 {
+	border-bottom: 1px solid white;
+}
+.main-item>h2, .main-item>h3 {
+	margin: 5px;
+	padding: 5px;
+}

@@ -1,0 +1,24 @@
+<div class="main-container">
+	<h1>osu! optimizer (PHP)</h1>
+	<h3>by Thayol</h3>
+	<div class="main-item">
+		<h2>Stats</h2>
+		<h3>
+			{{ MAIN_MAPSET_COUNT }} mapsets loaded.<br />
+			osu! folder: {{ MAIN_FOLDER_LOCATION }}<br />
+			Sum of individual file parse times: {{ MAIN_PARSE_TIME }}<br />
+			Last scan took {{ MAIN_SCAN_TIME }} seconds.<br />
+		</h3>
+	</div>
+	<div class="main-item">
+		<h2>Actions</h2>
+		<div class="options">{{ MAIN_OPTIONS }}</div>
+	</div>
+	<div class="main-item">
+		<h2>Browser</h2>
+		<div id="browser" class="browser">
+			<!-- todo JS -->
+		</div>
+		<script>{{ MAIN_BROWSER_SCRIPT }}</script>
+	</div>
+</div>

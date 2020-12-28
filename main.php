@@ -28,91 +28,117 @@ function redirect($path)
 	exit(0); // TERMINATE CURRENT SCRIPT!
 }
 
-if (isset($_GET["rescan"]))
+$te = new template_engine();
+if ($display == "main")
 {
-	$lib->rescan_library(json_decode(file_get_contents("session/settings.json"), true)["osu_folder"]);
-	$lib->save_db();
-	redirect("./");
-}
-
-if (isset($_GET["scan"]))
-{
-	$lib->scan_library(json_decode(file_get_contents("session/settings.json"), true)["osu_folder"]);
-	$lib->save_db();
-	redirect("./");
-}
-
-if (isset($_GET["blacken"]))
-{
-	@optimizer::blacken_backgrounds($lib);
-	redirect("./");
-}
-
-if (isset($_GET["nosb"]))
-{
-	@optimizer::remove_storyboards($lib);
-	redirect("./");
-}
-
-if (isset($_GET["novid"]))
-{
-	@optimizer::remove_videos($lib);
-	redirect("./");
-}
-
-if (isset($_GET["noskin"]))
-{
-	@optimizer::remove_skins($lib);
-	redirect("./");
-}
-
-if (isset($_GET["nohit"]))
-{
-	@optimizer::remove_hitsounds($lib);
-	redirect("./");
-}
-
-if (isset($_GET["purify"]))
-{
-	@optimizer::remove_other($lib);
-	redirect("./");
-}
-
-if (isset($_GET["nuke"]))
-{
-	@optimizer::full_nuke($lib);
-	redirect("./");
-}
-
-$start = file_get_contents("resources/start.html");
-$start = str_replace("{{ STYLE }}", file_get_contents("resources/style.css"), $start);
-echo $start;
-// dump($lib, "lib");
-echo '<a href="./?scan">[Scan]</a>&nbsp;&nbsp; ';
-echo '<a href="./?rescan">[Force rescan]</a>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;';
-echo '<a href="./?blacken">[Remove backgrounds]</a>&nbsp;&nbsp; ';
-echo '<a href="./?novid">[Remove videos]</a>&nbsp;&nbsp; ';
-echo '<a href="./?nosb">[Remove storyboards]</a>&nbsp;&nbsp; ';
-echo '<a href="./?noskin">[Remove beatmap skins]</a>&nbsp;&nbsp; ';
-echo '<a href="./?nohit">[Remove custom hitsounds]</a>&nbsp;&nbsp; ';
-echo '<a href="./?purify">[Remove junk files]</a>&nbsp;&nbsp; ';
-echo '<a href="./?nuke">[NUKE]</a>&nbsp;&nbsp; ';
-echo '<br /><br /><br /><a href="./splitter.php?page=1">[Explore]</a>&nbsp;&nbsp; ';
-echo "<h2>" . count($lib->get_library()) . " mapsets loaded.</h2>";
-echo "<h3>osu! folder: " . $lib->get_root() . "</h3>";
-
-$proc_time = 0;
-foreach ($lib->get_library() as $set)
-{
-	foreach ($set["difficulties"] as $map)
+	if (isset($_GET["rescan"]))
 	{
-		$proc_time += $map["parsing_time"] ?? 0;
+		$lib->rescan_library(json_decode(file_get_contents("session/settings.json"), true)["osu_folder"]);
+		$lib->save_db();
+		redirect("./");
 	}
+
+	if (isset($_GET["scan"]))
+	{
+		$lib->scan_library(json_decode(file_get_contents("session/settings.json"), true)["osu_folder"]);
+		$lib->save_db();
+		redirect("./");
+	}
+
+	if (isset($_GET["blacken"]))
+	{
+		@optimizer::blacken_backgrounds($lib);
+		redirect("./");
+	}
+
+	if (isset($_GET["nosb"]))
+	{
+		@optimizer::remove_storyboards($lib);
+		redirect("./");
+	}
+
+	if (isset($_GET["novid"]))
+	{
+		@optimizer::remove_videos($lib);
+		redirect("./");
+	}
+
+	if (isset($_GET["noskin"]))
+	{
+		@optimizer::remove_skins($lib);
+		redirect("./");
+	}
+
+	if (isset($_GET["nohit"]))
+	{
+		@optimizer::remove_hitsounds($lib);
+		redirect("./");
+	}
+
+	if (isset($_GET["purify"]))
+	{
+		@optimizer::remove_other($lib);
+		redirect("./");
+	}
+
+	if (isset($_GET["nuke"]))
+	{
+		@optimizer::full_nuke($lib);
+		redirect("./");
+	}
+
+	$options = array(
+		[ "./?scan", "Scan", "Only scan for changes." ],
+		[ "./?rescan", "Force rescan", "Fully rescan the library. <i>(cached)</i>" ],
+		[ "./?blacken", "Remove backgrounds", "Replace the background files with 1x1 black images." ],
+		[ "./?novid", "Remove videos", "" ],
+		[ "./?nosb", "Remove storyboards", "" ],
+		[ "./?noskin", "Remove beatmap skins", "Does not remove hitsounds &amp; storyboard elements." ],
+		[ "./?nohit", "Remove custom hitsounds", "Does not remove storyboard elements." ],
+		[ "./?purify", "Remove junk files", "Remove everything that isn't referenced in .osu or .osb files." ],
+		[ "./?nuke", "NUKE", "Remove everything that isn't .osu or a referenced audio/background file. Note: old/bad maps might lose vital elements!" ],
+		[ "./splitter.php?page=1", "Explore", "TBD" ],
+	);
+	
+	$parse_time = 0;
+	foreach ($lib->get_library() as $set)
+	{
+		foreach ($set["difficulties"] as $map)
+		{
+			$parse_time += $map["parsing_time"] ?? 0;
+		}
+	}
+	
+	$mapset_count = count($lib->get_library());
+	$osu_root = $lib->get_root();
+	$parse_time = round($parse_time, 3);
+	$scan_time = round($lib->get_scan_time(), 3);
+	
+	$te->set_block_template("CONTENT", "MAIN");
+	$te->set_block("MAIN_MAPSET_COUNT", $mapset_count);
+	$te->set_block("MAIN_FOLDER_LOCATION", $osu_root);
+	$te->set_block("MAIN_PARSE_TIME", $parse_time);
+	$te->set_block("MAIN_SCAN_TIME", $scan_time);
+	
+	foreach ($options as list($link, $name, $description))
+	{
+		$te->append_argumented_block("MAIN_OPTIONS", "MAIN_OPTION", [
+			"MAIN_OPTION_LINK" => $link,
+			"MAIN_OPTION_NAME" => $name,
+			"MAIN_OPTION_DESCRIPTION" => $description,
+		]);
+	}
+	
+	echo $te->get_html();
+	
+	// dump($lib, "lib");
 }
-$proc_time = round($proc_time, 3);
-$scan_time = round($lib->get_scan_time(), 3);
-echo "<h3>Total parse time: " . $proc_time . " seconds</h3>";
-echo "<h3>Scan time: " . $scan_time . " seconds</h3>";
+else if ($display == "start")
+{
+	
+}
+
+
 // foreach ($lib->get_library() as $mapset)
 // {
 	// echo '<div class="beatmapset">';
