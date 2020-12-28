@@ -202,37 +202,3 @@ else if ($display == "start")
 }
 	
 echo $te->get_html();
-
-
-// foreach ($lib->get_library() as $mapset)
-// {
-	// echo '<div class="beatmapset">';
-	// echo '<h2>Beatmapset: ';
-	// if (!empty($mapset["id"])) echo $mapset["id"];
-	// else echo '???';
-	// echo '</h2>';
-	// foreach ($mapset["difficulties"] as $beatmap)
-	// {
-		// $beatmap["format-2"] = mb_substr($beatmap["format"] ?? "v1", 1);
-		// if (is_numeric(mb_substr($beatmap["format"] ?? "v1", 1)))
-		// {
-			// echo '<div class="beatmap">';
-			// echo '<h3>Title: ' . $beatmap["title"];
-			// if (!empty($beatmap["id"])) echo '<br />ID: ' . $beatmap["id"];
-			// echo '<br />Artist: ' . $beatmap["artist"];
-			// echo '<br />Mapper: ' . $beatmap["mapper"];
-			// echo '<br />Format: ' . $beatmap["format"];
-			// echo '</h3>';
-			// echo '<img class="small-background" src="./proxy.php?path=' . urlencode($mapset["path"] . "/" . $beatmap["background"]) . '" />';
-			// echo '</div>';
-		// }
-		// else
-		// {
-			// echo '<div class="beatmap">';
-			// echo '<h3>Extra: ' . $beatmap["format"];
-			// echo '</h3>';
-			// echo '</div>';
-		// }
-	// }
-	// echo '</div>';
-// }

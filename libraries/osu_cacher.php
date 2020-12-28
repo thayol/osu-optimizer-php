@@ -26,7 +26,7 @@ class osu_cacher
 	
 	public function get_cached_path(string $path) : string
 	{
-		return str_replace($this->root, $this->cache_root, $path);
+		return str_replace($this->root, $this->cache_root, $path) . ".json";
 	}
 	
 	public function is_cached(string $path) : bool

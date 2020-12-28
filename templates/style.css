@@ -113,6 +113,7 @@ details.mapset summary::-webkit-details-marker {
 }
 .warn h2 {
 	margin: 0;
+	margin-bottom: 20px;
 	text-align: center;
 }
 .warn {
