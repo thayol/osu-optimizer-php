@@ -1,4 +1,5 @@
 <?php
+require_once "libraries/utils.php";
 // todo: make it work correctly on mac & linux (case sensitivity on deletion)
 class optimizer
 {
@@ -253,5 +254,32 @@ class optimizer
 			if (self::is_skinnable($file)) continue; // ignore default hitsounds
 			if (file_exists($file)) unlink($file);
 		}
+	}
+	
+	public static function repack(osu_library $library, string $key) : string
+	{
+		$path = $library->get_library()[$key]["path"] ?? "";
+		if (!file_exists($path)) return "";
+		
+		$name = "session/osz/" . basename($path) . ".osz";
+		if (file_exists($name)) return $name;
+
+		$zip = new ZipArchive;
+		
+		try
+		{
+			$zip->open($name, ZipArchive::CREATE);
+			utils::recursive_zip_map($zip, $path, $path);
+		}
+		catch (Exception $e)
+		{
+			return "";
+		}
+		finally
+		{
+			$zip->close();
+		}
+		
+		return $name;
 	}
 }

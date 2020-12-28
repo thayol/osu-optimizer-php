@@ -17,7 +17,7 @@ class utils
 		{
 			if (is_dir($file))
 			{
-				recursive_zip_map($zip, $root, $file);
+				self::recursive_zip_map($zip, $root, $file);
 			}
 			else
 			{
@@ -26,15 +26,4 @@ class utils
 			}
 		}
 	}
-	// $folder = $my_db[$beatmap_id];
-	// $name = basename($folder) . ".osz";
-
-	// echo "Zipping " . $name;
-
-	// $path = $collection_location . "/" . $name;
-	// $zip = new ZipArchive;
-	// $zip->open($path, ZipArchive::CREATE);
-	// echo ".";
-
-	// recursive_zip_map($zip, $fol
 }

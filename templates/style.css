@@ -11,9 +11,10 @@ html {
 	margin: 5px 0;
 	padding: 10px;
 }
-a:link, a:hover, a:active, a:visited {
+a, a:link, a:hover, a:active, a:visited {
 	color: HotPink;
 	text-decoration: inherit;
+	cursor:pointer;
 }
 .small-background {
 	max-height: 100px;
@@ -64,4 +65,49 @@ a:link, a:hover, a:active, a:visited {
 .main-item>h2, .main-item>h3 {
 	margin: 5px;
 	padding: 5px;
+}
+.map {
+	border: 1px solid white;
+	padding: 10px;
+	margin: 5px;
+}
+
+.map p {
+	margin: 0;
+	padding: 0;
+}
+.map-title {
+	font-weight: bold;
+}
+.map-artist, .map-mapper {
+	display: inline-block;
+}
+.map-artist::after {
+	content: ' /';
+}
+.map-mapper::before {
+	content: '/ ';
+}
+.map>div {
+	display: inline-block;
+}
+.map-image img {
+	max-height: 64px;
+	max-width: 64px;
+}
+.map-details {
+	display: inline-block;
+	vertical-align: top;
+	margin-left: 10px;
+}
+details.mapset summary::-webkit-details-marker {
+  display:none;
+}
+
+.mapset[open] .map {
+	background-color: #333333;
+}
+
+.mapset[open] summary .map {
+	background-color: #444444;
 }

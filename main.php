@@ -45,6 +45,13 @@ if ($display == "main")
 		redirect("./");
 	}
 
+	if (isset($_GET["repack"]) && !empty($_GET["key"]))
+	{
+		$key = $_GET["key"];
+		$dl = @optimizer::repack($lib, $key);
+		redirect("./" . $dl);
+	}
+
 	if (isset($_GET["blacken"]))
 	{
 		@optimizer::blacken_backgrounds($lib);

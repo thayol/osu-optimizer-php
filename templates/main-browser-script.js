@@ -1,29 +1,85 @@
 var xmlhttp = new XMLHttpRequest();
 var page = 1;
-var url = "./splitter.php?format=json&page=" + page.toString();
+var url = "./splitter.php?format=json&page=";
+updateBrowser();
+
 
 xmlhttp.onreadystatechange = function() {
 	// done & success
 	if (this.readyState == 4 && this.status == 200) {
 		var result = JSON.parse(this.responseText);
-		alert(result);
 		changeBrowser(result);
 	}
 };
 
-xmlhttp.open("GET", url, true);
-xmlhttp.send();
+function requestPage(uri) {
+	xmlhttp.open("GET", uri, true);
+	xmlhttp.send();
+}
+
+function updateBrowser() {
+	requestPage(url + page.toString());
+}
+
+
+
+function prevPage() {
+	page -= 1;
+	if (page < 0) page = 0;
+	updateBrowser();
+}
+
+function nextPage() {
+	page += 1;
+	updateBrowser();
+}
 
 function changeBrowser(mapsets)
 {
 	var browser = document.getElementById("browser");
 	
-	var output = "";
+	var output = "<div>Page " + page.toString() + "</div>";
 	
-	var template = "<div class=\"map\"><p class=\"map-title\">{{ MAP_TITLE }}</p></div>";
-	for (var beatmap of mapsets.entries)
+	var mapsetTemplate = `{{ MAIN_BROWSER_TEMPLATE_MAPSET }}`;
+	var template = `{{ MAIN_BROWSER_TEMPLATE_DIFFICULTY }}`;
+	for (var mapsetKey of Object.keys(mapsets))
 	{
-		output += template.replaceAll(/\{\{ MAP_TITLE \}\}/g, beatmap.Metadata.Title);
+		var mapset = mapsets[mapsetKey];
+		var subOutput = "";
+		var summary = true;
+		
+		for (var beatmapKey of Object.keys(mapset.difficulties))
+		{
+			var beatmap = mapset.difficulties[beatmapKey];
+			
+			if (beatmap.Metadata && beatmap.Metadata.Title)
+			{
+				var path = mapset.path.toString() + "/" + beatmap.background.toString();
+				path = encodeURI(path);
+				path = path.replaceAll(/\+/g, "%2b");
+				line = template;
+				line = line.replaceAll(/\{\{ MAP_TITLE \}\}/g, beatmap.Metadata.Title);
+				line = line.replaceAll(/\{\{ MAP_ARTIST \}\}/g, beatmap.Metadata.Artist);
+				line = line.replaceAll(/\{\{ MAP_MAPPER \}\}/g, beatmap.Metadata.Creator);
+				line = line.replaceAll(/\{\{ MAP_DIFFICULTY \}\}/g, beatmap.Metadata.Version);
+				line = line.replaceAll(/\{\{ MAP_IMAGE \}\}/g, "./proxy.php?path=" + path);
+				
+				if (summary)
+				{
+					summary = false;
+					line = "<summary>" + line + "</summary>";
+				}
+				
+				subOutput += line;
+			}
+		}
+		
+		var uriSafeKey = mapset.key;
+		uriSafeKey = encodeURI(uriSafeKey);
+		uriSafeKey = uriSafeKey.replaceAll(/\+/g, "%2b");
+		subOutput = mapsetTemplate.replaceAll(/\{\{ MAP_DIFFICULTIES \}\}/g, subOutput);
+		subOutput = subOutput.replaceAll(/\{\{ MAPSET_KEY \}\}/g, uriSafeKey);
+		output += subOutput;
 	}
 	
 	browser.innerHTML = output;
