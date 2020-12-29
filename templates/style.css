@@ -123,3 +123,6 @@ details.mapset summary::-webkit-details-marker {
 	border: 1px solid white;
 	padding: 10px;
 }
+.warn .note {
+	font-size: 0.9em;
+}

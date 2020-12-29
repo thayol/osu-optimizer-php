@@ -199,6 +199,10 @@ else if ($display == "start")
 	{
 		$te->set_block_template("SETTINGS_BACK", "SETTINGS_BACK_SOURCE");
 	}
+	if (!$lib->is_loaded())
+	{
+		$te->set_block_template("SETTINGS_FIRSTRUN", "SETTINGS_FIRSTRUN_SOURCE");
+	}
 }
 	
 echo $te->get_html();
