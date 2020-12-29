@@ -111,6 +111,15 @@ details.mapset summary::-webkit-details-marker {
 .mapset[open] summary .map {
 	background-color: #444444;
 }
+
+.mapset summary .map-difficulty {
+	color: transparent;
+}
+
+.mapset[open] summary .map-difficulty {
+	color: inherit;
+}
+
 .warn h2 {
 	margin: 0;
 	margin-bottom: 20px;
