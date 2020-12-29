@@ -130,17 +130,17 @@ if ($display == "main")
 
 	$options = array(
 		[ "./?settings", "Settings", "Go back to the setup/settings screen." ],
-		[ "./?scan", "Scan", "Only scan for changes." ],
-		[ "./?rescan", "Force rescan", "Fully rescan the library. <i>(cached)</i>" ],
+		[ "./?scan", "Scan", "Only scan for changes.", "Scan" ],
+		[ "./?rescan", "Force rescan", "Fully rescan the library. <i>(cached)</i>", "Rescan", "Slow" ],
 		[ "./?blacken", "Remove backgrounds", "Replace the background files with 1x1 black images." ],
 		[ "./?novid", "Remove videos", "" ],
 		[ "./?nosb", "Remove storyboards", "" ],
-		[ "./?noskin", "Remove beatmap skins", "Does not remove hitsounds &amp; storyboard elements." ],
-		[ "./?nohit", "Remove custom hitsounds", "Does not remove storyboard elements." ],
-		[ "./?purify", "Remove junk files", "Remove everything that isn't referenced in .osu or .osb files." ],
+		[ "./?noskin", "Remove beatmap skins", "Does not remove hitsounds &amp; storyboard elements.", null, "Slow" ],
+		[ "./?nohit", "Remove custom hitsounds", "Does not remove storyboard elements.", null, "Slow" ],
+		[ "./?purify", "Remove junk files", "Remove everything that isn't referenced in .osu or .osb files.", null, "Very slow" ],
 		[ "./?nuke", "NUKE", "Remove everything that isn't .osu or a referenced audio/background file. Note: old/bad maps might lose vital elements!" ],
-		[ "./?warn=repack&forward=" . urlencode("./?repack&all"), "Repack all", "Repack all maps to .osz files. Note: you should not share exported maps; always use official osu! links." ],
-		[ "./splitter.php?page=1", "Explore", "TBD" ],
+		[ "./?warn=repack&forward=" . urlencode("./?repack&all"), "Repack all", "Repack all maps to .osz files. Note: you should not share exported maps; always use official osu! links.", "Repack ALL", "EXTREMELY slow" ],
+		[ "./splitter.php?page=1", "TBD", null, "Explore" ],
 	);
 	
 	$parse_time = 0;
@@ -163,12 +163,25 @@ if ($display == "main")
 	$te->set_block("MAIN_PARSE_TIME", $parse_time);
 	$te->set_block("MAIN_SCAN_TIME", $scan_time);
 	
-	foreach ($options as list($link, $name, $description))
+	foreach ($options as $option)
 	{
+		$link = $option[0] ?? "#";
+		$name = $option[1] ?? "Unnamed action";
+		$description = $option[2] ?? "";
+		$button = $option[3] ?? "Do it!";
+		$name_note = $option[4] ?? "";
+		$link_note = $option[5] ?? "";
+		
+		if (!empty($name_note)) $name_note = "({$name_note})";
+		if (!empty($link_note)) $link_note = "({$link_note})";
+		
 		$te->append_argumented_block("MAIN_OPTIONS", "MAIN_OPTION", [
 			"MAIN_OPTION_LINK" => $link,
 			"MAIN_OPTION_NAME" => $name,
 			"MAIN_OPTION_DESCRIPTION" => $description,
+			"MAIN_OPTION_NAME_NOTE" => $name_note,
+			"MAIN_OPTION_LINK_NOTE" => $link_note,
+			"MAIN_OPTION_BUTTON" => $button,
 		]);
 	}
 	
