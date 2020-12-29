@@ -1,11 +1,11 @@
 <div class="warn">
 	<h2>SETTINGS</h2>
-	<form method="POST" action="./?settings">
+	<form id="settings" method="POST" action="./?settings">
 		<label for="osu_folder">osu! folder: </label>
-		<input type="text" id="osu_folder" name="osu_folder" placeholder="C:\Games\osu!" /><br />
+		<input type="text" form="settings" id="osu_folder" name="osu_folder" placeholder="C:\Games\osu!" /><br />
 		<p style="font-size:0.9em">(Use a fully qualified real path preferably without symlinks. Relative paths are supported in theory, but try to use absolute paths.)</p>
 		{{ SETTINGS_BACK }}
-		<input type="submit" value="Save" />
+		<input type="submit" form="settings" value="Save" />
 	</form>
 	<form id="cancelform" method="GET" action="./"></form>
 </div>

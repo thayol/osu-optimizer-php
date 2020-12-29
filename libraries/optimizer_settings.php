@@ -19,7 +19,7 @@ class optimizer_settings
 		$raw = file_get_contents($this->path);
 		$json = json_decode($raw, true);
 		
-		$this->osu_path = $json["osu_folder"] ?? "";
+		$this->osu_path = $json["osu_path"] ?? "";
 	}
 	
 	public function save()
@@ -28,7 +28,7 @@ class optimizer_settings
 		$json["osu_path"] = $this->osu_path;
 		
 		$raw = json_encode($json);
-		file_put_contents($this->path);
+		file_put_contents($this->path, $raw);
 	}
 	
 	public function set_osu_path($path) : void
