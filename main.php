@@ -1,4 +1,8 @@
 <?php
+// todo: cleanup repacker
+// todo: cleanup cache
+// todo: cleanup db
+// todo: cleanup settings (full reset)
 // todo: whitelist / blacklist
 // todo: dupe checker
 // todo: stardiff deleter
@@ -18,6 +22,8 @@ require_once "libraries/utils.php";
 require_once "libraries/template_engine.php";
 require_once "temp/dump.php";
 
+// $home = "./index.php"; // if fully qualified path needed
+$home = "./";
 
 $settings_path = "session/settings.json";
 $settings = new optimizer_settings($settings_path);
@@ -57,14 +63,14 @@ if (!empty($settings->get_osu_path()))
 	{
 		$lib->rescan_library($settings->get_osu_path());
 		$lib->save_db();
-		redirect("./");
+		redirect($home);
 	}
 
 	if (isset($_GET["scan"]))
 	{
 		$lib->scan_library($settings->get_osu_path());
 		$lib->save_db();
-		redirect("./");
+		redirect($home);
 	}
 }
 
@@ -89,43 +95,43 @@ if ($display == "main")
 	if (isset($_GET["blacken"]))
 	{
 		@optimizer::blacken_backgrounds($lib);
-		redirect("./");
+		redirect($home);
 	}
 
 	if (isset($_GET["nosb"]))
 	{
 		@optimizer::remove_storyboards($lib);
-		redirect("./");
+		redirect($home);
 	}
 
 	if (isset($_GET["novid"]))
 	{
 		@optimizer::remove_videos($lib);
-		redirect("./");
+		redirect($home);
 	}
 
 	if (isset($_GET["noskin"]))
 	{
 		@optimizer::remove_skins($lib);
-		redirect("./");
+		redirect($home);
 	}
 
 	if (isset($_GET["nohit"]))
 	{
 		@optimizer::remove_hitsounds($lib);
-		redirect("./");
+		redirect($home);
 	}
 
 	if (isset($_GET["purify"]))
 	{
 		@optimizer::remove_other($lib);
-		redirect("./");
+		redirect($home);
 	}
 
 	if (isset($_GET["nuke"]))
 	{
 		@optimizer::full_nuke($lib);
-		redirect("./");
+		redirect($home);
 	}
 
 	$options = array(
