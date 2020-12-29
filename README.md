@@ -1,8 +1,8 @@
 # osu! optimizer (PHP)
 
-Samsz has seen most of my work and it was his idea to combine them together before I start writing another one from scratch.
+[Samsz](https://www.reddit.com/user/kutyaszag) has seen most of my works and it was his idea to combine them together before I start writing another one from scratch.
 
-> "Swiss Army Knife style osu! library manager" -- Samsz
+> "Swiss Army Knife style osu! library manager" -- [Samsz](https://osu.ppy.sh/users/7357064)
 
 ## What's this?
 
