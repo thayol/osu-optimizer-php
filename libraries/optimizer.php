@@ -251,7 +251,7 @@ class optimizer
 		
 		foreach ($junk_files as $file)
 		{
-			if (self::is_skinnable($file)) continue; // ignore default hitsounds
+			if (!$nuke && self::is_skinnable($file)) continue; // ignore default hitsounds
 			if (file_exists($file)) unlink($file);
 		}
 	}
