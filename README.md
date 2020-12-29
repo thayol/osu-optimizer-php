@@ -1,5 +1,7 @@
 # osu! optimizer (PHP)
 
+**Current version: Version 0.1**
+
 [Samsz](https://www.reddit.com/user/kutyaszag) has seen most of my works and it was his idea to combine them together before I start writing another one from scratch.
 
 > "Swiss Army Knife style osu! library manager" -- [Samsz](https://osu.ppy.sh/users/7357064)
