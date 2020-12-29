@@ -35,6 +35,10 @@ if (isset($_GET["settings"]) || empty($settings->get_osu_path()))
 {
 	// $display = "start";
 }
+else if (isset($_GET["cleanup"]))
+{
+	$display = "cleanup";
+}
 else if (!empty($_GET["notice"]))
 {
 	$display = "notice";
@@ -43,12 +47,20 @@ else if (!empty($_GET["notice"]))
 else if (!empty($_GET["warn"]) && !empty($_GET["forward"]))
 {
 	$display = "warn";
-	$forward = $_GET["forward"];
+	$warn_forward = $_GET["forward"];
+	$warn_backward = "./";
 	$warn = $_GET["warn"];
 }
 else if ($lib->is_loaded())
 {
 	$display = "main";
+}
+else if (!empty($settings->get_osu_path())) // might be useless
+{
+	$display = "warn";
+	$warn_forward = "./?scan";
+	$warn_backward = "./?settings";
+	$warn = "missing_db";
 }
 
 function redirect($path)
@@ -146,6 +158,7 @@ if ($display == "main")
 		[ "./?purify", "Remove junk files", "Remove everything that isn't referenced in .osu or .osb files.", null, "Very slow" ],
 		[ "./?nuke", "NUKE", "Remove everything that isn't .osu or a referenced audio/background file. Note: old/bad maps might lose vital elements!" ],
 		[ "./?warn=repack&forward=" . urlencode("./?repack&all"), "Repack all", "Repack all maps to .osz files. Note: you should not share exported maps; always use official osu! links.", "Repack ALL", "EXTREMELY slow" ],
+		[ "./?cleanup", "Clean up", "Reset your settings, delete unused files, or clear cache. This does not touch your osu! folder. Useful after exporting many maps individually.", "Choose what to clean up" ],
 		[ "./splitter.php?page=1", "TBD", null, "Explore" ],
 	);
 	
@@ -198,11 +211,90 @@ else if ($display == "notice")
 	$notice_upper = strtoupper($notice);
 	$te->set_block_template("CONTENT", "NOTICE_{$notice_upper}");
 }
+else if ($display == "cleanup")
+{
+	$did_cleanup = false;
+	
+	if (isset($_GET["cleanup_all"])) // artificial get injections
+	{
+		$_GET["cleanup_repacker"] = 1;
+		$_GET["cleanup_cache"] = 1;
+		$_GET["cleanup_settings"] = 1;
+		$_GET["cleanup_db"] = 1;
+	}
+	
+	if (isset($_GET["cleanup_repacker"]))
+	{
+		$did_cleanup = true;
+		@optimizer::cleanup_dir("session/osz");
+	}
+	
+	if (isset($_GET["cleanup_cache"]))
+	{
+		$did_cleanup = true;
+		@optimizer::cleanup_dir("session/cache", true);
+	}
+	
+	if (isset($_GET["cleanup_settings"]))
+	{
+		$did_cleanup = true;
+		$file = $settings->get_settings_path();
+		if (file_exists($file)) unlink($file);
+	}
+	
+	if (isset($_GET["cleanup_db"]))
+	{
+		$did_cleanup = true;
+		$file = $lib->get_db_file_location();
+		if (file_exists($file)) unlink($file);
+	}
+	
+	$options = array(
+		[ "./?cleanup&cleanup_repacker", "Clean up repacker", "Delete the repacked .osz files. Moved, copied or \"downloaded\" files will not be affected." ],
+		[ "./?cleanup&cleanup_cache", "Clear cache", "Clear the beatmap cache. This should eliminate possible parsing problems, but it will make your next scan take a long time." ],
+		[ "./?cleanup&cleanup_db", "Reset database", "A roundabout way to force a rescan...", null, "Force rescan" ],
+		[ "./?cleanup&cleanup_settings", "Reset settings", "You will have to re-enter your osu! directory!" ],
+		[ "./?cleanup&cleanup_all", "Full reset", "Fully reset this program and its settings." ],
+	);
+	
+	if ($did_cleanup)
+	{
+		$options = array(
+			[ "./", "Cleanup done!", null, "OK" ],
+		);
+	}
+	
+	$te->set_block_template("CONTENT", "ACTIONS");
+	
+	foreach ($options as $option)
+	{
+		$link = $option[0] ?? "#";
+		$name = $option[1] ?? "Unnamed action";
+		$description = $option[2] ?? "";
+		$button = $option[3] ?? "Clean!";
+		$name_note = $option[4] ?? "";
+		$link_note = $option[5] ?? "";
+		
+		if (!empty($name_note)) $name_note = "({$name_note})";
+		if (!empty($link_note)) $link_note = "({$link_note})";
+		
+		$te->append_argumented_block("MAIN_OPTIONS", "MAIN_OPTION", [
+			"MAIN_OPTION_LINK" => $link,
+			"MAIN_OPTION_NAME" => $name,
+			"MAIN_OPTION_DESCRIPTION" => $description,
+			"MAIN_OPTION_NAME_NOTE" => $name_note,
+			"MAIN_OPTION_LINK_NOTE" => $link_note,
+			"MAIN_OPTION_BUTTON" => $button,
+		]);
+	}
+}
 else if ($display == "warn")
 {
 	$warn_upper = strtoupper($warn);
-	$te->set_block("WARN_FORWARD_LINK", $forward);
-	$te->set_block_template("CONTENT", "WARN_{$warn_upper}");
+	$te->set_block("WARN_FORWARD_LINK", $warn_forward);
+	$te->set_block("WARN_BACKWARD_LINK", $warn_backward);
+	$te->set_block_template("WARN_CONTENT", "WARN_{$warn_upper}");
+	$te->set_block_template("CONTENT", "WARN");
 }
 else if ($display == "start")
 {

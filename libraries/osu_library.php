@@ -43,7 +43,7 @@ class osu_library
 			};
 		}
 		
-		$glob = glob($library_folder . "/*", GLOB_ONLYDIR);
+		$glob = glob(utils::globsafe($library_folder) . "/*", GLOB_ONLYDIR);
 		
 		natsort($glob); // i like wasting your processing power
 		foreach($glob as $folder)

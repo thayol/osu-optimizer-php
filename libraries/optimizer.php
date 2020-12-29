@@ -290,4 +290,22 @@ class optimizer
 		
 		return $name;
 	}
+	
+	public static function cleanup_dir(string $dir, bool $recursion = false) : void
+	{
+		$dir = rtrim(str_replace("\\", "/", $dir), "/");
+		$glob = glob(utils::globsafe($dir) . "/*");
+		foreach ($glob as $file)
+		{
+			if (is_dir($file) && $recursion)
+			{
+				self::cleanup_dir($file, true);
+				@rmdir($file);
+			}
+			else
+			{
+				unlink($file);
+			}
+		}
+	}
 }

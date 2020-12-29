@@ -45,4 +45,9 @@ class optimizer_settings
 	{
 		return $this->osu_path;
 	}
+	
+	public function get_settings_path() : string
+	{
+		return $this->path;
+	}
 }
