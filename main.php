@@ -1,5 +1,4 @@
 <?php
-// todo: action onclick to loading screen
 // todo: cleanup repacker
 // todo: cleanup cache
 // todo: cleanup db
