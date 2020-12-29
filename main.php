@@ -147,7 +147,7 @@ if ($display == "main")
 	}
 
 	$options = array(
-		[ "./?settings", "Settings", "Go back to the setup/settings screen." ],
+		[ "./?settings", "Settings", "Go back to the setup/settings screen.", "Settings" ],
 		[ "./?scan", "Scan", "Only scan for changes.", "Scan" ],
 		[ "./?rescan", "Force rescan", "Fully rescan the library. <i>(cached)</i>", "Rescan", "Slow" ],
 		[ "./?blacken", "Remove backgrounds", "Replace the background files with 1x1 black images." ],
@@ -156,7 +156,7 @@ if ($display == "main")
 		[ "./?noskin", "Remove beatmap skins", "Does not remove hitsounds &amp; storyboard elements.", null, "Slow" ],
 		[ "./?nohit", "Remove custom hitsounds", "Does not remove storyboard elements.", null, "Slow" ],
 		[ "./?purify", "Remove junk files", "Remove everything that isn't referenced in .osu or .osb files.", null, "Very slow" ],
-		[ "./?nuke", "NUKE", "Remove everything that isn't .osu or a referenced audio/background file. Note: old/bad maps might lose vital elements!" ],
+		[ "./?nuke", "NUKE", "Remove everything that isn't .osu or a referenced audio/background file. Note: old/bad maps might lose vital elements!", "NUKE" ],
 		[ "./?warn=repack&forward=" . urlencode("./?repack&all"), "Repack all", "Repack all maps to .osz files. Note: you should not share exported maps; always use official osu! links.", "Repack ALL", "EXTREMELY slow" ],
 		[ "./?cleanup", "Clean up", "Reset your settings, delete unused files, or clear cache. This does not touch your osu! folder. Useful after exporting many maps individually.", "Choose what to clean up" ],
 		[ "./splitter.php?page=1", "TBD", null, "Explore" ],
@@ -260,7 +260,7 @@ else if ($display == "cleanup")
 	if ($did_cleanup)
 	{
 		$options = array(
-			[ "./", "Cleanup done!", null, "OK" ],
+			[ "./", "Cleanup done!", null, "OK", null, "A long loading screen may follow depending on what you cleaned." ],
 		);
 	}
 	
