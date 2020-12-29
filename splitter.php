@@ -33,6 +33,7 @@ if ($format == "html")
 	echo $start;
 
 	echo '<h2>Page ' . $page . '/' . $maxpage . ' of osu! songs</h2>';
+	echo '<a href="./">[Back]</a> &nbsp;&nbsp;&nbsp; ';
 	echo '<a href="./splitter.php?page=' . $previous . '">[Previous]</a> ';
 	echo '<a href="./splitter.php?page=' . $next . '">[Next]</a> ';
 	echo "<pre>";
