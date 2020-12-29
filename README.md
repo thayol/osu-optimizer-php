@@ -21,12 +21,14 @@ Pull requests are welcome! I doubt this project would get any traffic, so feel f
  - [x] Remove beatmap keyed hitsounds
  - [x] Remove beatmap default hitsounds
  - [x] Remove junk files (mapping garbage, unused storyboard, random files, etc.)
- - [ ] Export maps to .osz
+ - [x] Export maps to .osz
  - [ ] Delete maps based on star difficulty
  - [ ] Delete maps based on game mode
  - [ ] Blacklist: the maps that should not be touched by this program
 
 ## Warning!
+
+This project is untested on MacOS. It is not tested thoroughly on Windows either!
 
 You should always back up your osu! folder before using programs of these kinds. I will include a somewhat legal disclaimer just in case.
 
@@ -37,4 +39,22 @@ You should always back up your osu! folder before using programs of these kinds.
 
 ## Usage
 
-To be written.
+You will need PHP 7.4 or later. (Help: [Windows][Windows-PHP], [MacOS][Mac-OS-PHP])
+
+Steps to set up with PHP's built-in solution:
+
+1. Clone or download and unzip the source code.
+2. Open a new terminal, powershell window, or command prompt at the source root.
+3. Type `php -S 127.0.0.1:1337` and press enter. (Capital -S is important!)
+4. Open <http://127.0.0.1:1337/> in your browser.
+5. Enter your osu! folder's location and press "Save."
+6. Pick your poison.
+7. When you're done, terminate the terminal/pwsh/cmd with Ctrl+C.
+
+
+If you know what you're doing, you could run it on a dedicated server that can handle PHP, but exposing functions capable of file deletion outside the current working directory should never be done on the web. At least bind to localhost.
+
+
+
+[Windows-PHP]: https://www.php.net/manual/en/install.windows.tools.php
+[Mac-OS-PHP]: https://www.php.net/manual/en/install.macosx.bundled.php
