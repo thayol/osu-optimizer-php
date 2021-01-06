@@ -42,7 +42,7 @@ class utils
 		{
 			$raw = file_get_contents($path);
 		}
-		catch
+		catch (Exception $e)
 		{
 			$raw = "";
 		}
