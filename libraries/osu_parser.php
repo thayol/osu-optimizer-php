@@ -34,7 +34,7 @@ class osu_parser
 	// fix backslash and double quotes
 	public static function fix_filename(string $filename) : string
 	{
-		return trim(str_replace("\\", "/", $filename), "\"");
+		return trim(utils::to_unix_slashes($filename), "\"");
 	}
 	
 	public static function file_ver_peppy(string $path)// : array|bool // see you in php8

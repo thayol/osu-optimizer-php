@@ -24,8 +24,7 @@ class osu_library
 	public function scan_library(string $root) : void
 	{
 		$time_start = microtime(true); // measure scanning time
-		$root = str_ireplace("\\", "/", $root); // fuck windows backslash
-		$root = rtrim($root, "/"); // remove trailing slash(es)
+		$root = utils::to_unix_slashes_without_trail($root);
 		
 		// giving a different library should always cause a full rescan
 		if ($this->get_osu_root() !== $root) 

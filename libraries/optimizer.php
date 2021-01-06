@@ -293,7 +293,7 @@ class optimizer
 	
 	public static function cleanup_dir(string $dir, bool $recursion = false) : void
 	{
-		$dir = rtrim(str_replace("\\", "/", $dir), "/");
+		$dir = utils::to_unix_slashes_without_trail($dir);
 		$glob = glob(utils::globsafe($dir) . "/*");
 		foreach ($glob as $file)
 		{

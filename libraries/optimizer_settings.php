@@ -8,36 +8,32 @@ class optimizer_settings
 	public function __construct(string $path)
 	{
 		$this->path = $path;
+		
 		if (file_exists($path))
 		{
 			$this->load();
 		}
 	}
 	
-	public function load()
+	public function load() : void
 	{
-		$raw = file_get_contents($this->path);
-		$json = json_decode($raw, true);
+		$json = utils::load_json($this->path);
 		
 		$this->osu_path = $json["osu_path"] ?? "";
 	}
 	
-	public function save()
+	public function save() : void
 	{
-		$json = array();
-		$json["osu_path"] = $this->osu_path;
+		$json = [ "osu_path" => $this->osu_path ];
 		
-		$raw = json_encode($json);
-		file_put_contents($this->path, $raw);
+		file_put_contents($this->path, json_encode($json));
 	}
 	
 	public function set_osu_path($path) : void
 	{
-		$sanitized = str_replace("\\", "/", $path);
-		$sanitized = rtrim($sanitized, "/");
 		if (file_exists($path))
 		{
-			$this->osu_path = $sanitized;
+			$this->osu_path = utils::to_unix_slashes_without_trail($path);
 		}
 	}
 	

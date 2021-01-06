@@ -49,4 +49,19 @@ class utils
 		
 		return json_decode($raw, true) ?? array();
 	}
+	
+	public static function to_unix_slashes(string $path) : string
+	{
+		return str_replace("\\", "/", $path);
+	}
+	
+	public static function remove_trailing_slashes(string $path) : string
+	{
+		return rtrim($path, "/");
+	}
+	
+	public static function to_unix_slashes_without_trail(string $path) : string
+	{
+		return self::remove_trailing_slashes(self::to_unix_slashes($path));
+	}
 }
