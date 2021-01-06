@@ -105,6 +105,11 @@ class optimizer
 		return $queue;
 	}
 	
+	public static function build_single_level_removand_list(osu_library $library)
+	{
+		return self::build_removand_list($library);
+	}
+	
 	public static function copy_unless_excluded(string $needle, array $value, array $excluded_list)
 	{
 		if (in_array($needle, $excluded_list))
@@ -186,21 +191,25 @@ class optimizer
 		return array_intersect_key($files, array_diff($files_lowercase, $exclusions_lowercase));
 	}
 	
-	public static function get_junk_files(osu_library $library, $excluded = array()) : array
+	public static function get_junk_files(osu_library $library, $excluded = array(), $single_level = false) : array
 	{
-		$removand = self::build_removand_list($library, true);
-		$exclusions = self::build_excluded_list($library);
-		
+		$removand = self::build_removand_list($library, $single_level);
+		$exclusions = self::build_excluded_list($library, $excluded);
 		return self::array_diff_ver_peppy($removand, $exclusions);
+	}
+	
+	public static function get_single_level_junk_files(osu_library $library, $excluded = array()) : array
+	{
+		return self::get_junk_files($library, $excluded, true);
 	}
 	
 	public static function remove_skins(osu_library $library) : void
 	{
-		$junk_files = self::get_junk_files($library);
+		$junk_files = self::get_single_level_junk_files($library);
 		
 		foreach ($junk_files as $key => $file)
 		{
-			if (self::is_skinnable_image($file) || self::is_skinnable_other($file))
+			if ((!self::is_skinnable_image($file) || self::is_skinnable_other($file)))
 			{
 				unset($junk_files[$key]);
 			}
@@ -211,11 +220,11 @@ class optimizer
 	
 	public static function remove_hitsounds(osu_library $library) : void
 	{
-		$junk_files = self::get_junk_files($library, $exclusions);
+		$junk_files = self::get_single_level_junk_files($library, $exclusions);
 		
 		foreach ($junk_files as $key => $file)
 		{
-			if (self::is_skinnable_sound($file))
+			if (!self::is_skinnable_sound($file))
 			{
 				unset($junk_files[$key]);
 			}
@@ -245,12 +254,14 @@ class optimizer
 			$excluded_arg = array();
 		}
 		
-		$junk_files = self::get_junk_files($library, $excluded_arg);
+		$junk_files = self::get_junk_files($library, $excluded_arg, false);
 		
 		foreach ($junk_files as $key => $file)
 		{
-			if (!$nuke && self::is_skinnable($file)) continue;
-			unset($junk_files[$key]);
+			if (!$nuke && self::is_skinnable($file))
+			{
+				unset($junk_files[$key]);;
+			}
 		}
 		
 		utils::array_delete_if_exists($junk_files);
