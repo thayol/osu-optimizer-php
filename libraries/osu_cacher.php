@@ -1,22 +1,23 @@
 <?php
+require_once "libraries/utils.php";
+
 class osu_cacher
 {
-	public static $hash_function = "md5";
-	// public static $hash_function = "crc32";
+	public static $hash_function = "md5"; // crc32 was another option, but md5 produced better filesizes 
 	
-	private $root;
+	private $original_root;
 	private $cache_root;
 	
-	public function __construct(string $root, string $cache_root)
+	public function __construct(string $original_root, string $cache_root)
 	{
-		$this->root = $root;
+		$this->original_root = $original_root;
 		$this->cache_root = $cache_root;
-		if (!file_exists($cache_root)) mkdir($cache_root, 0777, true);
+		utils::make_directory($cache_root);
 	}
 	
-	public function get_root() : string
+	public function get_original_root() : string
 	{
-		return $this->root;
+		return $this->original_root;
 	}
 	
 	public function get_cache_root() : string
@@ -26,7 +27,7 @@ class osu_cacher
 	
 	public function get_cached_path(string $path) : string
 	{
-		return str_replace($this->root, $this->cache_root, $path) . ".json";
+		return str_replace($this->get_original_root(), $this->cache_root, $path) . ".json";
 	}
 	
 	public function is_cached(string $path) : bool
@@ -34,29 +35,37 @@ class osu_cacher
 		return file_exists($this->get_cached_path($path));
 	}
 	
-	public function get_cache(string $path, $hash=false)// : array|bool // see you again in php8
+	public static function is_hash_invalid(array $json, string $hash) : bool
+	{
+		if (empty($hash)) return false; // empty means hash check has to be skipped
+		if (empty($json["hash"])) return true; // json without a hash is invalid
+		
+		return $json["hash"] == $hash;
+	}
+	
+	public function get_cache(string $path, string $hash="")// : array|bool // see you again in php8
 	{
 		if (!$this->is_cached($path)) return false;
 
-		$raw = file_get_contents($this->get_cached_path($path));
-		$json = json_decode($raw, true);
+		$json = utils::load_json($this->get_cached_path($path));
 		
 		if (empty($json)) return false; // cache had empty save
-		
-		if ($hash !== false && $hash != ($json["hash"] ?? false)) return false; // hash check failed
+		if (self::is_hash_invalid($json, $hash)) return false;
 		
 		return $json;
+	}
+	
+	public static function set_hash_if_not_present(array &$json, string $path) : void
+	{
+		if (!isset($json["hash"])) $json["hash"] = hash_file(self::$hash_function, $path);
 	}
 	
 	public function set_cache(string $path, array $content) : void
 	{
 		$cache_path = $this->get_cached_path($path);
-		$cache_dir = dirname($cache_path);
-		if (!file_exists($cache_dir)) mkdir($cache_dir, 0777, true);
+		self::set_hash_if_not_present($content, $path);
 		
-		if (!isset($content["hash"])) $content["hash"] = hash_file(self::$hash_function, $path);
-		
-		$encoded = json_encode($content);
-		file_put_contents($cache_path, $encoded);
+		utils::make_directory(dirname($cache_path));
+		file_put_contents($cache_path, json_encode($content));
 	}
 }

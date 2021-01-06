@@ -28,7 +28,7 @@ class osu_library
 		$root = rtrim($root, "/"); // remove trailing slash(es)
 		
 		// giving a different library should always cause a full rescan
-		if ($this->get_root() !== $root) 
+		if ($this->get_osu_root() !== $root) 
 		{
 			$this->rescan_library($root);
 		}
@@ -176,7 +176,7 @@ class osu_library
 		if (isset($this->db["library"][$key])) unset($this->db["library"][$key]);
 	}
 	
-	public function get_root() : string
+	public function get_osu_root() : string
 	{
 		return $this->db["root"] ?? "";
 	}
@@ -228,7 +228,7 @@ class osu_library
 	
 	public function get_library_folder() : string
 	{
-		return $this->get_root() . "/" . self::$song_library_folder;
+		return $this->get_osu_root() . "/" . self::$song_library_folder;
 	}
 	
 	public function get_library() : array

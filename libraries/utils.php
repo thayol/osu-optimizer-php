@@ -26,4 +26,27 @@ class utils
 			}
 		}
 	}
+	
+	// does nothing if the directory already exists
+	public static function make_directory(string $directory) : void
+	{
+		if (!file_exists($directory))
+		{
+			mkdir($directory, 0777, true);
+		}
+	}
+	
+	public static function load_json(string $path) : array
+	{
+		try
+		{
+			$raw = file_get_contents($path);
+		}
+		catch
+		{
+			$raw = "";
+		}
+		
+		return json_decode($raw, true) ?? array();
+	}
 }

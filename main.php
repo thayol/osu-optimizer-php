@@ -172,7 +172,7 @@ if ($display == "main")
 	}
 	
 	$mapset_count = count($lib->get_library());
-	$osu_root = $lib->get_root();
+	$osu_root = $lib->get_osu_root();
 	$parse_time = round($parse_time, 3);
 	$scan_time = round($lib->get_scan_time(), 3);
 	
