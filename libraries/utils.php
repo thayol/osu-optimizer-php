@@ -64,4 +64,20 @@ class utils
 	{
 		return self::remove_trailing_slashes(self::to_unix_slashes($path));
 	}
+	
+	public static function delete_if_exists(string $file) : void
+	{
+		if (file_exists($file))
+		{
+			unlink($file);
+		}
+	}
+	
+	public static function array_delete_if_exists(array $files_list) : void
+	{
+		foreach ($files_list as $file)
+		{
+			self::delete_if_exists($file);
+		}
+	}
 }

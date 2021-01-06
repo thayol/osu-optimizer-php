@@ -65,28 +65,17 @@ class optimizer
 	
 	public static function remove_videos(osu_library $library)
 	{
-		foreach ($library->get_videos() as $file)
-		{
-			if (file_exists($file)) unlink($file);
-		}
+		utils::array_delete_if_exists($library->get_videos());
 	}
 	
 	public static function remove_storyboards(osu_library $library) : void
 	{
 		// exclude vital files if they are used in the storyboard
-		$storyboards_safe = $library->get_storyboards();
-		$storyboards_safe = array_diff($storyboards_safe, $library->get_backgrounds());
-		$storyboards_safe = array_diff($storyboards_safe, $library->get_audiofiles());
+		$vital = array_merge($library->get_backgrounds(), $library->get_audiofiles());
+		$sb_safe = array_diff($library->get_storyboards(), $vital);
 		
-		foreach ($storyboards_safe as $file)
-		{
-			if (file_exists($file)) unlink($file);
-		}
-		
-		foreach ($library->get_osb_files() as $file)
-		{
-			if (file_exists($file)) unlink($file);
-		}
+		utils::array_delete_if_exists($sb_safe);
+		utils::array_delete_if_exists($library->get_osb_files());
 	}
 	
 	private static function build_removand_sublist(array &$queue, string $folder, bool $single_level = false)
@@ -189,44 +178,47 @@ class optimizer
 		return array_intersect_key($files, array_diff($files_lowercase, $exclusions_lowercase));
 	}
 	
-	public static function remove_skins(osu_library $library) : void
+	public static function get_junk_files(osu_library $library, $excluded = array()) : array
 	{
 		$removand = self::build_removand_list($library, true);
 		$exclusions = self::build_excluded_list($library);
 		
-		$junk_files = self::array_diff_ver_peppy($removand, $exclusions);
+		return self::array_diff_ver_peppy($removand, $exclusions);
+	}
+	
+	public static function remove_skins(osu_library $library) : void
+	{
+		$junk_files = self::get_junk_files($library);
 		
-		foreach ($junk_files as $file)
+		foreach ($junk_files as $key => $file)
 		{
 			if (self::is_skinnable_image($file) || self::is_skinnable_other($file))
 			{
-				if (file_exists($file)) unlink($file);
+				unset($junk_files[$key]);
 			}
 		}
+		
+		utils::array_delete_if_exists($junk_files);
 	}
 	
 	public static function remove_hitsounds(osu_library $library) : void
 	{
-		$removand = self::build_removand_list($library, true);
-		$exclusions = self::build_excluded_list($library, [ "hitsounds" ]);
+		$junk_files = self::get_junk_files($library, $exclusions);
 		
-		$junk_files = self::array_diff_ver_peppy($removand, $exclusions);
-		
-		foreach ($junk_files as $file)
+		foreach ($junk_files as $key => $file)
 		{
 			if (self::is_skinnable_sound($file))
 			{
-				if (file_exists($file)) unlink($file);
+				unset($junk_files[$key]);
 			}
 		}
+		
+		utils::array_delete_if_exists($junk_files);
 		
 		$hitsounds_safe = $library->get_hitsounds();
 		$hitsounds_safe = array_diff($hitsounds_safe, $library->get_audiofiles());
 		
-		foreach ($hitsounds_safe as $file)
-		{
-			if (file_exists($file)) unlink($file);
-		}
+		utils::array_delete_if_exists($hitsounds_safe);
 	}
 	
 	public static function full_nuke(osu_library $library) : void
@@ -244,16 +236,16 @@ class optimizer
 		{
 			$excluded_arg = array();
 		}
-		$removand = self::build_removand_list($library);
-		$exclusions = self::build_excluded_list($library, $excluded_arg);
 		
-		$junk_files = self::array_diff_ver_peppy($removand, $exclusions);
+		$junk_files = self::get_junk_files($library, $excluded_arg);
 		
-		foreach ($junk_files as $file)
+		foreach ($junk_files as $key => $file)
 		{
-			if (!$nuke && self::is_skinnable($file)) continue; // ignore default hitsounds
-			if (file_exists($file)) unlink($file);
+			if (!$nuke && self::is_skinnable($file)) continue;
+			unset($junk_files[$key]);
 		}
+		
+		utils::array_delete_if_exists($junk_files);
 	}
 	
 	public static function repack_all(osu_library $library) : void
