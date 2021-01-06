@@ -1,10 +1,10 @@
 # osu! optimizer (PHP)
 
-**Current version: Version 0.1**
+**Current version: Version 0.1a**
 
-[round boi](https://osu.ppy.sh/users/7357064) has seen most of my works and it was his idea to combine them together before I start writing another one from scratch.
+[round boi][round-boi-osu] has seen most of my works and it was his idea to combine them together before I start writing another one from scratch.
 
-> "Swiss Army Knife style osu! library manager" -- [round boi](https://osu.ppy.sh/users/7357064)
+> "Swiss Army Knife style osu! library manager" -- [round boi][round-boi-osu]
 
 ## What's this?
 
@@ -60,3 +60,4 @@ If you know what you're doing, you could run it on a dedicated server that can h
 
 [Windows-PHP]: https://www.php.net/manual/en/install.windows.tools.php
 [Mac-OS-PHP]: https://www.php.net/manual/en/install.macosx.bundled.php
+[round-boi-osu]: https://osu.ppy.sh/users/7357064
