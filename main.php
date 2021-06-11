@@ -1,12 +1,4 @@
 <?php
-// todo: cleanup repacker
-// todo: cleanup cache
-// todo: cleanup db
-// todo: cleanup settings (full reset)
-// todo: whitelist / blacklist
-// todo: dupe checker
-// todo: stardiff deleter
-// todo: mode deleter
 
 // git does not like empty folders
 if (!file_exists("session")) mkdir("session");
@@ -33,7 +25,7 @@ $display = "start";
 
 if (isset($_GET["settings"]) || empty($settings->get_osu_path()))
 {
-	// $display = "start";
+	$display = "start";
 }
 else if (isset($_GET["cleanup"]))
 {

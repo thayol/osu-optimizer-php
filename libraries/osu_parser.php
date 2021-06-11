@@ -106,105 +106,102 @@ class osu_parser
 				continue; // this line has been analyzed
 			}
 			
-			if (mb_strpos($line, "//") === 0 || // the editor puts hella lot of comments in the files
-				$section_type === false)
+			if (!(mb_strpos($line, "//") === 0 || // the editor puts hella lot of comments in the files
+				$section_type === false))
 			{
-			}
-			else if ($section_type == "key-value pairs")
-			{
-				// init empty array
-				if (!isset($parsed[$current_section])) $parsed[$current_section] = array();
-				
-				$delimiter_position = mb_strpos($line, $delimiter);
-				
-				// old maps had random lines and lines with different delimiters (why?)
-				if ($delimiter_position !== false)
-				{
-					$kv_key = mb_substr($line, 0, $delimiter_position);
-					$kv_value = mb_substr($line, $delimiter_position + strlen($delimiter));
-					
-					if ($current_section == "Variables")
-					{
-						$variables["keys"][$kv_key] = $kv_key;
-						$variables["values"][$kv_key] = $kv_value;
-					}
-					else
-					{
-						// after some thinking, keeping the original names was a good idea
-						$parsed[$current_section][$kv_key] = $kv_value;	
-					}
-				}
-			}
-			else if ($section_type == "lists")
-			{
-				$list = explode($delimiter, $line);
-				if ($current_section == "Events") // saving the whole thing would take up too much space
-				{
-					if (mb_strpos($line, " ") === 0 || mb_strpos($line, "_") === 0) continue; // skip storyboard details lines
-					
-					list($event_type, $source_files) = self::gather_source_files($list, $variables);
-					
-					if ($event_type === false)
-					{
-					}
-					else if ($event_type == "Background")
-					{
-						$parsed["background"] = $source_files[0] ?? "";
-					}
-					else if ($event_type == "Video")
-					{
-						$parsed["video"] = $source_files[0] ?? "";
-					}
-					else
-					{
-						// init empty array
-						if (!isset($parsed["storyboard"])) $parsed["storyboard"] = array();
-						
-						// add the elements to the storyboard
-						foreach ($source_files as $source_file)
-						{
-							$parsed["storyboard"][] = $source_file;
-						}
-					}
-				}
-				else if ($current_section == "HitObjects") // saving the whole thing would take up too much space v2
-				{
-					$last = array_key_last($list);
-					if (!empty($list[$last]) && mb_strpos($list[$last], ":") !== false)
-					{
-						$hitSample = explode(":", $list[$last]);
-						$last_sample = array_key_last($hitSample);
-						if (!empty($hitSample[$last_sample]))
-						{
-							$filename = $hitSample[$last_sample];
-							$filename = self::fix_filename($filename);
-							
-							// some maps leave out the extensions
-							// (and some maps have .wav filess pointing to .ogg files........)
-							if (empty(pathinfo($filename, PATHINFO_EXTENSION)))
-							{
-								$filename = $filename . ".wav"; // just to signal it's an "audio file"
-							}
-							
-							// init empty array
-							if (!isset($parsed["hitsounds"])) $parsed["hitsounds"] = array();
-							
-							// add the element to the hitsounds
-							$parsed["hitsounds"][] = $filename;
-						}
-					}
-				}
-				else
+				if ($section_type == "key-value pairs")
 				{
 					// init empty array
 					if (!isset($parsed[$current_section])) $parsed[$current_section] = array();
 					
-					// just dump the non-events...
-					// 
-					// at the point of writing this
-					// comment, this section will
-					// never get used...
-					$parsed[$current_section][] = $line;
+					$delimiter_position = mb_strpos($line, $delimiter);
+					
+					// old maps had random lines and lines with different delimiters (why?)
+					if ($delimiter_position !== false)
+					{
+						$kv_key = mb_substr($line, 0, $delimiter_position);
+						$kv_value = mb_substr($line, $delimiter_position + strlen($delimiter));
+						
+						if ($current_section == "Variables")
+						{
+							$variables["keys"][$kv_key] = $kv_key;
+							$variables["values"][$kv_key] = $kv_value;
+						}
+						else
+						{
+							// after some thinking, keeping the original names was a good idea
+							$parsed[$current_section][$kv_key] = $kv_value;	
+						}
+					}
+				}
+				else if ($section_type == "lists")
+				{
+					$list = explode($delimiter, $line);
+					if ($current_section == "Events") // saving the whole thing would take up too much space
+					{
+						if (mb_strpos($line, " ") === 0 || mb_strpos($line, "_") === 0) continue; // skip storyboard details lines
+						
+						list($event_type, $source_files) = self::gather_source_files($list, $variables);
+						
+						else if ($event_type == "Background")
+						{
+							$parsed["background"] = $source_files[0] ?? "";
+						}
+						else if ($event_type == "Video")
+						{
+							$parsed["video"] = $source_files[0] ?? "";
+						}
+						else if ($event_type !== false)
+						{
+							// init empty array
+							if (!isset($parsed["storyboard"])) $parsed["storyboard"] = array();
+							
+							// add the elements to the storyboard
+							foreach ($source_files as $source_file)
+							{
+								$parsed["storyboard"][] = $source_file;
+							}
+						}
+					}
+					else if ($current_section == "HitObjects") // saving the whole thing would take up too much space v2
+					{
+						$last = array_key_last($list);
+						if (!empty($list[$last]) && mb_strpos($list[$last], ":") !== false)
+						{
+							$hitSample = explode(":", $list[$last]);
+							$last_sample = array_key_last($hitSample);
+							if (!empty($hitSample[$last_sample]))
+							{
+								$filename = $hitSample[$last_sample];
+								$filename = self::fix_filename($filename);
+								
+								// some maps leave out the extensions
+								// (and some maps have .wav filess pointing to .ogg files........)
+								if (empty(pathinfo($filename, PATHINFO_EXTENSION)))
+								{
+									$filename = $filename . ".wav"; // just to signal it's an "audio file"
+								}
+								
+								// init empty array
+								if (!isset($parsed["hitsounds"])) $parsed["hitsounds"] = array();
+								
+								// add the element to the hitsounds
+								$parsed["hitsounds"][] = $filename;
+							}
+						}
+					}
+					else
+					{
+						// init empty array
+						if (!isset($parsed[$current_section])) $parsed[$current_section] = array();
+						
+						// just dump the non-events...
+						// 
+						// at the point of writing this
+						// comment, this section will
+						// never get used...
+						$parsed[$current_section][] = $line;
+					}
 				}
 			}
 		}
